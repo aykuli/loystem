@@ -8,6 +8,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"lystem/internal/config"
+	"lystem/internal/handlers"
+	"lystem/internal/middleware"
 	"lystem/pkg/postgres"
 )
 
@@ -25,4 +27,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	v1 := handlers.New()
+	api := app.Group("/api/user", middleware.Authorize)
+	// /api/v1/register
+	api.Post("/register", v1.CreateUser)
+	// /api/v1/login
+	api.Post("/login", v1.CreateSession)
+	// /api/v1/logout
+	api.Delete("/logout", v1.DeleteSession)
 }
