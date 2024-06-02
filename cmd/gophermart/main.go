@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	_, err := postgres.NewStorage(config.Options.DatabaseUri)
+	db, err := postgres.NewStorage(config.Options.DatabaseURI)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,16 +23,21 @@ func main() {
 	app.Use(logger.New(logger.Config{
 		Output: os.Stdout,
 	}))
+
+	api := app.Group("/api/user", middleware.AcquireDBConnection, middleware.Authorize)
+
+	v1 := handlers.New(db)
+	api.Post("/register", v1.CreateUser)
+	api.Post("/login", v1.CreateSession)
+	api.Delete("/logout", v1.DeleteSession)
+
+	api.Get("/orders", v1.GetOrders)
+	api.Get("/balance", v1.GetBalance)
+	api.Post("/balance/withdraw", v1.Withdraw)
+	api.Post("/withdrawals", v1.Withdrawals)
+
 	err = app.Listen(config.Options.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
-	v1 := handlers.New()
-	api := app.Group("/api/user", middleware.Authorize)
-	// /api/v1/register
-	api.Post("/register", v1.CreateUser)
-	// /api/v1/login
-	api.Post("/login", v1.CreateSession)
-	// /api/v1/logout
-	api.Delete("/logout", v1.DeleteSession)
 }
