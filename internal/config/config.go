@@ -4,12 +4,16 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type Config struct {
 	Address              string `env:"RUN_ADDRESS"`
-	DatabaseUri          string `env:"DATABASE_URI"`
+	DatabaseURI          string `env:"DATABASE_URI"`
 	AccrualSystemAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	PollInterval         time.Duration
 }
 
 const (
@@ -19,18 +23,23 @@ const (
 
 var Options = Config{
 	Address:              hostDefault + ":" + portDefault,
-	DatabaseUri:          "",
+	DatabaseURI:          "",
 	AccrualSystemAddress: "",
+	PollInterval:         2 * time.Second,
 }
 
 func init() {
 	parseFlags()
+	err := env.Parse(&Options)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func parseFlags() {
 	fs := flag.NewFlagSet("loystem", flag.ContinueOnError)
 	fs.StringVar(&Options.Address, "a", hostDefault+":"+portDefault, "server address to run on")
-	fs.StringVar(&Options.DatabaseUri, "d", "", "database source name")
+	fs.StringVar(&Options.DatabaseURI, "d", "", "database source name")
 	fs.StringVar(&Options.AccrualSystemAddress, "r", "", "accrual system address")
 
 	err := fs.Parse(os.Args[1:])

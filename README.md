@@ -1,25 +1,50 @@
-# go-musthave-diploma-tpl
+# Loyalty system (loystem)
 
-Шаблон репозитория для индивидуального дипломного проекта курса «Go-разработчик»
+## Behaviour schema
 
-# Начало работы
-
-1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без
-   префикса `https://`) для создания модуля
-
-# Обновление шаблона
-
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
-
-```
-git remote add -m master template https://github.com/yandex-praktikum/go-musthave-diploma-tpl.git
+```mermaid
+sequenceDiagram
+autonumber
+User->>Loystem: Регистрируется
+User-->>Market: Совершает покупку
+Order-)CountSystem: Попадает в систему
+User->>Loystem: Передаёт номер заказа
+Loystem->>Loystem: Связывается номер заказа с пользователем
+Loystem->>Loystem: Начисление баллов если есть что
+User->>Loystem: Списывает свои баллы за покупки
 ```
 
-Для обновления кода автотестов выполните команду:
+## Run
+
+```shell
+./cmd/gophermart -d='postgresql://localhost/postgres?user=postgres&password=postgres'
+```
+
+## Test
+
+```shell
+gophermarttest \
+            -test.v -test.run=^TestGophermart$ \
+            -gophermart-binary-path=cmd/gophermart/gophermart \
+            -gophermart-host=localhost \
+            -gophermart-port=8080 \
+            -gophermart-database-uri="postgresql://postgres:postgres@postgres/postgres" \
+            -accrual-binary-path=cmd/accrual/accrual_linux_amd64 \
+            -accrual-host=localhost \
+            -accrual-port=$(random unused-port) \
+            -accrual-database-uri="postgresql://postgres:postgres@postgres/postgres"
 
 ```
-git fetch template && git checkout template/master .github
-```
 
-Затем добавьте полученные изменения в свой репозиторий.
+## Links
+
+### Graceful shutdown
+
+* <https://github.com/gofiber/fiber/issues/899>
+* <https://habr.com/ru/articles/771626/>
+* <https://followtheprocess.github.io/posts/graceful_shutdown/>
+* <https://www.sobyte.net/post/2021-10/go-http-server-shudown-done-right/>
+
+## ISSUES
+
+* uploaded_at in responses are weird, not now()
