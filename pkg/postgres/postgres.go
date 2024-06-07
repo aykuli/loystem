@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -60,6 +61,8 @@ type DBStorage struct {
 }
 
 func NewStorage(uri string) (*DBStorage, error) {
+	fmt.Println("--------\nNewStorage\n-----------")
+
 	ctx := context.Background()
 	var s *DBStorage
 	if err := s.createDBPool(ctx, uri); err != nil {

@@ -15,10 +15,13 @@ import (
 )
 
 func main() {
+	fmt.Println("--------\ngophermart\n-----------")
 	db, err := postgres.NewStorage(config.Options.DatabaseURI)
 	if err != nil {
+		fmt.Println("NewStorage err", err)
 		log.Fatal(err)
 	}
+	fmt.Println("db", db)
 
 	app := fiber.New()
 	app.Use(logger.New(logger.Config{
