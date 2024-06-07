@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -24,6 +25,15 @@ func main() {
 	fmt.Println("db", db)
 
 	app := fiber.New()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		fmt.Println("Gracefully shutting down loystem application")
+		if err := app.Shutdown(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	app.Use(logger.New(logger.Config{
 		Output: os.Stdout,
 	}))
@@ -40,8 +50,7 @@ func main() {
 	api.Post("/balance/withdraw", v1.Withdraw)
 	api.Post("/withdrawals", v1.Withdrawals)
 	fmt.Println(config.Options)
-	err = app.Listen(config.Options.Address)
-	if err != nil {
+	if err := app.Listen(config.Options.Address); err != nil {
 		log.Fatal(err)
 	}
 }
