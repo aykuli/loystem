@@ -1,28 +1,56 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"lystem/internal/config"
+	"lystem/internal/handlers"
+	"lystem/internal/middleware"
 	"lystem/pkg/postgres"
 )
 
 func main() {
-	_, err := postgres.NewStorage(config.Options.DatabaseUri)
+	fmt.Println("--------\ngophermart\n-----------")
+	db, err := postgres.NewStorage(config.Options.DatabaseURI)
 	if err != nil {
+		fmt.Println("NewStorage err", err)
 		log.Fatal(err)
 	}
+	fmt.Println("db", db)
 
 	app := fiber.New()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		fmt.Println("Gracefully shutting down loystem application")
+		if err := app.Shutdown(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	app.Use(logger.New(logger.Config{
 		Output: os.Stdout,
 	}))
-	err = app.Listen(config.Options.Address)
-	if err != nil {
+
+	api := app.Group("/api/user", middleware.AcquireDBConnection, middleware.Authorize)
+
+	v1 := handlers.New(db)
+	api.Post("/register", v1.CreateUser)
+	api.Post("/login", v1.CreateSession)
+	api.Delete("/logout", v1.DeleteSession)
+
+	api.Get("/orders", v1.GetOrders)
+	api.Get("/balance", v1.GetBalance)
+	api.Post("/balance/withdraw", v1.Withdraw)
+	api.Post("/withdrawals", v1.Withdrawals)
+	fmt.Println(config.Options)
+	if err := app.Listen(config.Options.Address); err != nil {
 		log.Fatal(err)
 	}
 }
