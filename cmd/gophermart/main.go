@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -35,7 +36,7 @@ func main() {
 	api.Get("/balance", v1.GetBalance)
 	api.Post("/balance/withdraw", v1.Withdraw)
 	api.Post("/withdrawals", v1.Withdrawals)
-
+	fmt.Println(config.Options)
 	err = app.Listen(config.Options.Address)
 	if err != nil {
 		log.Fatal(err)

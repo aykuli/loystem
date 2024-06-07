@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,11 +21,12 @@ var (
 		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT now())`
-	createOrdersTableSQL = `CREATE TABLE IF NOT EXISTS orders (
+	createOrderStatusTypeSQL = `CREATE TYPE status AS ENUM ('NEW', 'PROCESSING', 'INVALID', 'PROCESSED')`
+	createOrdersTableSQL     = `CREATE TABLE IF NOT EXISTS orders (
 		id SERIAL PRIMARY KEY,
 		number VARCHAR NOT NULL UNIQUE,
 		accrual FLOAT,
-		status ENUM('NEW', 'PROCESSING', 'INVALID', 'PROCESSED'),
+		status status,
 		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 		UNIQUE (number, user_id)
@@ -33,12 +35,13 @@ var (
 		id SERIAL PRIMARY KEY,
 		current FLOAT NOT NULL,
 		user_id INTEGER NOT NULL REFERENCES users(id),
-		updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`
-	createTableBalanceEventsSQL = `CREATE TABLE IF NOT EXISTS withdrawals (
+	createBalanceOperationTypeSQL = `CREATE TYPE operation AS ENUM('withdrawn', 'earned', 'summarized')`
+	createTableBalanceEventsSQL   = `CREATE TABLE IF NOT EXISTS withdrawals (
 		id SERIAL PRIMARY KEY,
 		sum FLOAT NOT NULL,
-		operation ENUM('withdrawn', 'earned', 'summarized'),
+		operation operation,
 		balance_id INTEGER NOT NULL REFERENCES balances(id),
 		order_id INTEGER NOT NULL REFERENCES orders(id),
 		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -59,12 +62,16 @@ func (r *Repository) Init(ctx context.Context, tx pgx.Tx) error {
 		createUsersTableSQL,
 		createUsersLoginKeySQL,
 		createSessionsTableSQL,
+		createOrderStatusTypeSQL,
 		createOrdersTableSQL,
 		createTableBalancesSQL,
+		createBalanceOperationTypeSQL,
 		createTableBalanceEventsSQL,
 	}
 	for _, query := range queries {
 		if _, err := tx.Exec(ctx, query); err != nil {
+			fmt.Println("\n\n", query)
+			fmt.Println(err)
 			return err
 		}
 	}
