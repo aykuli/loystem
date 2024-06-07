@@ -21,12 +21,12 @@ var (
 		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT now())`
-	createOrderStatusTypeSQL = `CREATE TYPE status AS ENUM ('NEW', 'PROCESSING', 'INVALID', 'PROCESSED')`
-	createOrdersTableSQL     = `CREATE TABLE IF NOT EXISTS orders (
+	// status AS ENUM ('NEW', 'PROCESSING', 'INVALID', 'PROCESSED')`
+	createOrdersTableSQL = `CREATE TABLE IF NOT EXISTS orders (
 		id SERIAL PRIMARY KEY,
 		number VARCHAR NOT NULL UNIQUE,
 		accrual FLOAT,
-		status status,
+		status VARCHAR NOT NULL DEFAULT 'NEW',
 		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 		UNIQUE (number, user_id)
@@ -37,11 +37,11 @@ var (
 		user_id INTEGER NOT NULL REFERENCES users(id),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`
-	createBalanceOperationTypeSQL = `CREATE TYPE operation AS ENUM('withdrawn', 'earned', 'summarized')`
-	createTableBalanceEventsSQL   = `CREATE TABLE IF NOT EXISTS withdrawals (
+	// operation AS ENUM('withdrawn', 'earned', 'summarized')`
+	createTableBalanceEventsSQL = `CREATE TABLE IF NOT EXISTS withdrawals (
 		id SERIAL PRIMARY KEY,
 		sum FLOAT NOT NULL,
-		operation operation,
+		operation VARCHAR NOT NULL DEFAULT 'withdrawn',
 		balance_id INTEGER NOT NULL REFERENCES balances(id),
 		order_id INTEGER NOT NULL REFERENCES orders(id),
 		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -62,10 +62,8 @@ func (r *Repository) Init(ctx context.Context, tx pgx.Tx) error {
 		createUsersTableSQL,
 		createUsersLoginKeySQL,
 		createSessionsTableSQL,
-		createOrderStatusTypeSQL,
 		createOrdersTableSQL,
 		createTableBalancesSQL,
-		createBalanceOperationTypeSQL,
 		createTableBalanceEventsSQL,
 	}
 	for _, query := range queries {

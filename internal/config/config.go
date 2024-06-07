@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 )
@@ -24,6 +25,7 @@ var Options = Config{
 }
 
 func init() {
+	fmt.Println("-------\nPARSE FLAGS\n-------------\n")
 	parseFlags()
 }
 
@@ -32,6 +34,7 @@ func parseFlags() {
 	fs.StringVar(&Options.Address, "a", hostDefault+":"+portDefault, "server address to run on")
 	fs.StringVar(&Options.DatabaseURI, "d", "", "database source name")
 	fs.StringVar(&Options.AccrualSystemAddress, "r", "", "accrual system address")
+	fmt.Println("-------\nOptions\n-------------\n", Options)
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
