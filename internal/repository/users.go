@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	insertUserSQL      = "INSERT INTO users (login, salt, hashed_password) VALUES (@login, @salt, @hashed_password) RETURNING id"
-	findUserByLoginSQL = "SELECT id, login, hashed_password, salt FROM users WHERE login = @login"
-	findUserByIDSQL    = "SELECT id FROM users WHERE id = @id"
+	insertUserSQL      = `INSERT INTO users (login, salt, hashed_password) VALUES (@login, @salt, @hashed_password) RETURNING id`
+	findUserByLoginSQL = `SELECT id, login, hashed_password, salt FROM users WHERE login = @login`
+	findUserByIDSQL    = `SELECT id FROM users WHERE id = @id`
 )
 
 type UsersRepository struct {
@@ -27,7 +27,7 @@ func (r *UsersRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User) (
 	args := pgx.NamedArgs{"login": u.Login, "salt": u.Salt, "hashed_password": u.HashedPassword}
 	result := tx.QueryRow(ctx, insertUserSQL, args)
 
-	var id int64
+	var id int
 	err := result.Scan(&id)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *UsersRepository) FindByLogin(login string) (*user.User, error) {
 	return &u, nil
 }
 
-func (r *UsersRepository) FindByID(id int64) (*user.User, error) {
+func (r *UsersRepository) FindByID(id int) (*user.User, error) {
 	var u user.User
 	args := pgx.NamedArgs{"id": id}
 	result := r.conn.QueryRow(context.Background(), findUserByIDSQL, args)

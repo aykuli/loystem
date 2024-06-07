@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	saltSize     = 16
-	passwordSize = 12
-	letters      = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	saltSize = 16
 )
 
 type UserFactory struct {

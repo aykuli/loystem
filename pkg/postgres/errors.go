@@ -1,10 +1,12 @@
 package postgres
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -34,9 +36,18 @@ func newDBError(err error) error {
 		}
 
 	}
+	fmt.Printf("Err: %+v\n\n", err)
 
 	return &postgresError{
 		name: name,
 		Err:  err,
 	}
+}
+
+func rollbackOnErr(ctx context.Context, tx pgx.Tx, err error) error {
+	if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+		return newDBError(rollbackErr)
+	}
+
+	return newDBError(err)
 }

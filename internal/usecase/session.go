@@ -11,28 +11,29 @@ import (
 	"lystem/internal/storage"
 )
 
-type SessionUseCase struct {
+type SessionUsecase struct {
 	db storage.Storage
 }
 
 var ErrInvalidCreds = errors.New("неверная пара логин/пароль")
 
-func NewSessionUseCase(db storage.Storage) *SessionUseCase {
-	return &SessionUseCase{db}
+func NewSessionUsecase(db storage.Storage) *SessionUsecase {
+	return &SessionUsecase{db}
 }
 
-func (uc *SessionUseCase) Create(ctx *fasthttp.RequestCtx, sessionRequest request.CreateSession) (*session.Session, error) {
-	user, err := uc.db.FindUserByLogin(ctx, sessionRequest.Login)
+func (uc *SessionUsecase) Create(ctx *fasthttp.RequestCtx, sessionRequest request.CreateSession) (*session.Session, error) {
+	foundUser, err := uc.db.FindUserByLogin(ctx, sessionRequest.Login)
 	if err != nil {
 		return nil, err
 	}
 
-	valid := user.ValidatePassword(sessionRequest.Password)
+	valid := foundUser.ValidatePassword(sessionRequest.Password)
+
 	if !valid {
 		return nil, ErrInvalidCreds
 	}
 
-	newSession, err := uc.db.CreateSession(ctx, user)
+	newSession, err := uc.db.CreateSession(ctx, foundUser)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +41,6 @@ func (uc *SessionUseCase) Create(ctx *fasthttp.RequestCtx, sessionRequest reques
 	return newSession, nil
 }
 
-func (uc *SessionUseCase) Delete(ctx *fasthttp.RequestCtx, u *user.User) error {
+func (uc *SessionUsecase) Delete(ctx *fasthttp.RequestCtx, u *user.User) error {
 	return uc.db.DeleteSession(ctx, u)
 }

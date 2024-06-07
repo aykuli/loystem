@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,7 +25,7 @@ var (
 		id SERIAL PRIMARY KEY,
 		number VARCHAR NOT NULL UNIQUE,
 		accrual FLOAT,
-		status VARCHAR NOT NULL DEFAULT 'NEW',
+		status VARCHAR DEFAULT 'NEW',
 		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 		UNIQUE (number, user_id)
@@ -37,12 +36,11 @@ var (
 		user_id INTEGER NOT NULL REFERENCES users(id),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`
-	// operation AS ENUM('withdrawn', 'earned', 'summarized')`
-	createTableBalanceEventsSQL = `CREATE TABLE IF NOT EXISTS withdrawals (
+	createTableWithdrawalsSQL = `CREATE TABLE IF NOT EXISTS withdrawals (
 		id SERIAL PRIMARY KEY,
 		sum FLOAT NOT NULL,
-		operation VARCHAR NOT NULL DEFAULT 'withdrawn',
 		balance_id INTEGER NOT NULL REFERENCES balances(id),
+		order_number VARCHAR NOT NULL,
 		order_id INTEGER NOT NULL REFERENCES orders(id),
 		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 		UNIQUE (order_id, balance_id)
@@ -64,12 +62,10 @@ func (r *Repository) Init(ctx context.Context, tx pgx.Tx) error {
 		createSessionsTableSQL,
 		createOrdersTableSQL,
 		createTableBalancesSQL,
-		createTableBalanceEventsSQL,
+		createTableWithdrawalsSQL,
 	}
 	for _, query := range queries {
 		if _, err := tx.Exec(ctx, query); err != nil {
-			fmt.Println("\n\n", query)
-			fmt.Println(err)
 			return err
 		}
 	}
