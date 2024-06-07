@@ -20,10 +20,27 @@ User->>Loystem: Списывает свои баллы за покупки
 ./cmd/gophermart -d='postgresql://localhost/postgres?user=postgres&password=postgres'
 ```
 
+## Test
+
+```shell
+gophermarttest \
+            -test.v -test.run=^TestGophermart$ \
+            -gophermart-binary-path=cmd/gophermart/gophermart \
+            -gophermart-host=localhost \
+            -gophermart-port=8080 \
+            -gophermart-database-uri="postgresql://postgres:postgres@postgres/postgres" \
+            -accrual-binary-path=cmd/accrual/accrual_linux_amd64 \
+            -accrual-host=localhost \
+            -accrual-port=$(random unused-port) \
+            -accrual-database-uri="postgresql://postgres:postgres@postgres/postgres"
+
+```
+
 ## Links
 
 ### Graceful shutdown
 
+* <https://github.com/gofiber/fiber/issues/899>
 * <https://habr.com/ru/articles/771626/>
 * <https://followtheprocess.github.io/posts/graceful_shutdown/>
 * <https://www.sobyte.net/post/2021-10/go-http-server-shudown-done-right/>
