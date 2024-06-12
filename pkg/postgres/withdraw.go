@@ -4,7 +4,6 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"lystem/internal/models/balance"
-	"lystem/internal/models/order"
 	"lystem/internal/models/user"
 	"lystem/internal/models/withdrawal"
 	"lystem/internal/repository"
@@ -32,7 +31,7 @@ func (s *DBStorage) FindWithdrawals(ctx *fasthttp.RequestCtx, userBalance *balan
 	return withdrawals, nil
 }
 
-func (s *DBStorage) CreateWithdraw(ctx *fasthttp.RequestCtx, processedOrder *order.Order, currUser *user.User, sum float64) error {
+func (s *DBStorage) CreateWithdraw(ctx *fasthttp.RequestCtx, orderNumber string, currUser *user.User, sum float64) error {
 	conn, err := s.instance.Acquire(ctx)
 	if err != nil {
 		return newDBError(err)
@@ -52,7 +51,7 @@ func (s *DBStorage) CreateWithdraw(ctx *fasthttp.RequestCtx, processedOrder *ord
 		return rollbackOnErr(ctx, tx, err)
 	}
 
-	withdraw, err := withdrawalsRepo.Create(ctx, tx, processedOrder, userBalance, sum)
+	withdraw, err := withdrawalsRepo.Create(ctx, tx, orderNumber, userBalance, sum)
 	if err != nil {
 		return rollbackOnErr(ctx, tx, err)
 	}

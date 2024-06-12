@@ -2,11 +2,9 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/valyala/fasthttp"
 
-	"lystem/internal/models/order"
 	"lystem/internal/models/user"
 	"lystem/internal/models/withdrawal"
 	"lystem/internal/request"
@@ -27,19 +25,19 @@ func NewWithdrawalUsecase(db storage.Storage) *WithdrawalUsecase {
 }
 
 func (uc *WithdrawalUsecase) Create(ctx *fasthttp.RequestCtx, wRequest request.WithdrawRequest, currentUser *user.User) error {
-	foundOrder, err := uc.db.FindOrderByNumber(ctx, wRequest.Order)
-	fmt.Printf("\n\nfoundOrder: %+v\n", foundOrder)
-	fmt.Printf("err: %+v\n", err)
-	if err != nil {
-		return err
-	}
-	if foundOrder == nil || foundOrder.Status != order.StatusProcessed {
-		return ErrOrderUserIncorrect
-	}
-	// does it needed to check order status
-	if foundOrder.UserID != currentUser.ID {
-		return ErrOrderUserIncorrect
-	}
+	//foundOrder, err := uc.db.FindOrderByNumber(ctx, wRequest.Order)
+	//fmt.Printf("\n\nfoundOrder: %+v\n", foundOrder)
+	//fmt.Printf("err: %+v\n", err)
+	//if err != nil {
+	//	return err
+	//}
+	//if foundOrder == nil || foundOrder.Status != order.StatusProcessed {
+	//	return ErrOrderUserIncorrect
+	//}
+	//// does it needed to check order status
+	//if foundOrder.UserID != currentUser.ID {
+	//	return ErrOrderUserIncorrect
+	//}
 
 	userBalance, err := uc.db.FindBalance(ctx, currentUser)
 	if err != nil {
@@ -49,7 +47,7 @@ func (uc *WithdrawalUsecase) Create(ctx *fasthttp.RequestCtx, wRequest request.W
 		return ErrNotEnoughBalance
 	}
 
-	return uc.db.CreateWithdraw(ctx, foundOrder, currentUser, wRequest.Sum)
+	return uc.db.CreateWithdraw(ctx, wRequest.Order, currentUser, wRequest.Sum)
 }
 
 func (uc *WithdrawalUsecase) FindAll(ctx *fasthttp.RequestCtx, currUser *user.User) ([]withdrawal.Withdrawal, error) {

@@ -21,7 +21,7 @@ type Storage interface {
 	IncreaseBalance(ctx *fasthttp.RequestCtx, o *order.Order, u *user.User) error
 	DeductFromBalance(ctx *fasthttp.RequestCtx, w *withdrawal.Withdrawal, u *user.User) error
 
-	CreateWithdraw(ctx *fasthttp.RequestCtx, o *order.Order, u *user.User, sum float64) error
+	CreateWithdraw(ctx *fasthttp.RequestCtx, orderNumber string, u *user.User, sum float64) error
 	FindWithdrawals(ctx *fasthttp.RequestCtx, balance *balance.Balance) ([]withdrawal.Withdrawal, error)
 
 	FindOrderByNumber(ctx *fasthttp.RequestCtx, number string) (*order.Order, error)

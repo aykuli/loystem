@@ -41,9 +41,7 @@ var (
 		sum FLOAT NOT NULL,
 		balance_id INTEGER NOT NULL REFERENCES balances(id),
 		order_number VARCHAR NOT NULL,
-		order_id INTEGER NOT NULL REFERENCES orders(id),
-		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-		UNIQUE (order_id, balance_id)
+		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`
 )
 
