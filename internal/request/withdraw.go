@@ -6,11 +6,10 @@ type WithdrawRequest struct {
 }
 
 func (wr *WithdrawRequest) Validate() error {
-	return nil
-	//if validLuhn(wr.Order) {
-	//	return nil
-	//}
-	//
-	//return errInvalidOrderNumber
+	if validLuhn(wr.Order) {
+		return nil
+	}
+
+	return errInvalidOrderNumber
 
 }

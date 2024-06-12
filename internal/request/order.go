@@ -18,12 +18,11 @@ func (s *SaveOrderRequest) Parse(body []byte) error {
 }
 
 func (s *SaveOrderRequest) Validate() error {
-	return nil
-	//if validLuhn(s.Number) {
-	//	return nil
-	//}
-	//
-	//return errInvalidOrderNumber
+	if validLuhn(s.Number) {
+		return nil
+	}
+
+	return errInvalidOrderNumber
 }
 
 type GetOrderRequest struct {

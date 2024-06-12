@@ -37,7 +37,9 @@ func main() {
 
 	app.Use(logger.New(logger.Config{Output: os.Stdout}))
 
-	v1 := handlers.New(db, agent.New())
+	v1 := handlers.New(db, agent.New(config.Options.AccrualSystemAddress))
+
+	//go v1.PollOrdersInfo()
 
 	api := app.Group("/api/user", middleware.Authorize(db))
 	api.Post("/register", v1.CreateUser)
@@ -51,7 +53,7 @@ func main() {
 	api.Post("/balance/withdraw", v1.Withdraw)
 	api.Get("/withdrawals", v1.Withdrawals)
 
-	if err := app.Listen(config.Options.Address); err != nil {
+	if err = app.Listen(config.Options.Address); err != nil {
 		c <- os.Interrupt
 	}
 }

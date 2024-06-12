@@ -7,22 +7,22 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"lystem/internal/config"
 	"lystem/internal/models/order"
 	"lystem/internal/request"
 )
 
 type GophermartAgent struct {
+	url string
 }
 
 var ErrNoSuchOrder = errors.New("no such order")
 
-func New() *GophermartAgent {
-	return &GophermartAgent{}
+func New(url string) *GophermartAgent {
+	return &GophermartAgent{url}
 }
 
-func (a *GophermartAgent) GetOrderInfo(newOrder *order.Order) (*order.Order, error) {
-	url := fmt.Sprintf("%s/api/orders/%s", config.Options.AccrualSystemAddress, newOrder.Number)
+func (a *GophermartAgent) GetOrderInfo(o *order.Order) (*order.Order, error) {
+	url := fmt.Sprintf("%s/api/orders/%s", a.url, o.Number)
 	req := fiber.Get(url)
 	req.Set("Accept", "application/json")
 
@@ -43,23 +43,7 @@ func (a *GophermartAgent) GetOrderInfo(newOrder *order.Order) (*order.Order, err
 		return nil, err
 	}
 
-	newOrder.Status = orderInfo.Status
-	newOrder.Accrual = orderInfo.Accrual
-	return newOrder, nil
+	o.Status = orderInfo.Status
+	o.Accrual = orderInfo.Accrual
+	return o, nil
 }
-
-//
-//func (a *Agent) Start() {
-//	requestTicker := time.NewTicker(config.Options.PollInterval)
-//	defer requestTicker.Stop()
-//	for {
-//		select {
-//		case <-requestTicker.C:
-//			err := makeReq(agent)
-//			if err != nil {
-//				log.Printf("agent error: %v", err)
-//			}
-//		}
-//	}
-//}
-//
