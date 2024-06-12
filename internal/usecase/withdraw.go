@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/valyala/fasthttp"
 
@@ -27,6 +28,8 @@ func NewWithdrawalUsecase(db storage.Storage) *WithdrawalUsecase {
 
 func (uc *WithdrawalUsecase) Create(ctx *fasthttp.RequestCtx, wRequest request.WithdrawRequest, currentUser *user.User) error {
 	foundOrder, err := uc.db.FindOrderByNumber(ctx, wRequest.Order)
+	fmt.Printf("\n\nfoundOrder: %+v\n", foundOrder)
+	fmt.Printf("err: %+v\n", err)
 	if err != nil {
 		return err
 	}
