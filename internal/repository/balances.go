@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	insertBalanceSQL     = `INSERT INTO balances (user_id, 0) RETURNING id`
+	insertBalanceSQL     = `INSERT INTO balances (user_id, current) VALUES (@user_id, @current) RETURNING id`
 	selectBalanceSQL     = `SELECT id, current, user_id FROM balances WHERE user_id = @user_id`
 	increaseBalanceSQL   = `UPDATE balances SET current = current + @accrual WHERE user_id = @user_id`
 	deductFromBalanceSQL = `UPDATE balances SET current = current - @sum WHERE user_id = @user_id`
@@ -28,7 +28,7 @@ func NewBalancesRepository(conn *pgxpool.Conn) *BalancesRepository {
 }
 
 func (r *BalancesRepository) Create(ctx context.Context, tx pgx.Tx, currUser *user.User) (*balance.Balance, error) {
-	args := pgx.NamedArgs{"user_id": currUser.ID}
+	args := pgx.NamedArgs{"user_id": currUser.ID, "current": 0}
 	result := tx.QueryRow(ctx, insertBalanceSQL, args)
 	var id int
 	if err := result.Scan(&id); err != nil {

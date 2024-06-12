@@ -11,8 +11,8 @@ import (
 )
 
 type Common struct {
-	Success bool        `json:"success"`
-	Payload interface{} `json:"payload"`
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
 }
 
 type Session struct {

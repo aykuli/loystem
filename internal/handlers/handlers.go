@@ -54,18 +54,18 @@ type v1Handler struct {
 func (v1 v1Handler) CreateUser(ctx *fiber.Ctx) error {
 	var userRequest request.CreateUser
 	if err := ctx.BodyParser(&userRequest); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 	if err := userRequest.Validate(); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	userUsecase := usecase.NewUserUsecase(v1.storage)
 	newSession, err := userUsecase.CreateUserAndSession(ctx.Context(), userRequest)
 	if err != nil && errors.Is(err, postgres.ErrUserAlreadyExists) {
-		return ctx.Status(fiber.StatusConflict).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusConflict).JSON(presenter.Common{Success: false, Message: err.Error()})
 	} else if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	bearerToken := fmt.Sprintf("Token token=%s", newSession.ID)
@@ -89,18 +89,18 @@ func (v1 v1Handler) CreateUser(ctx *fiber.Ctx) error {
 func (v1 v1Handler) CreateSession(ctx *fiber.Ctx) error {
 	var sessionRequest request.CreateSession
 	if err := ctx.BodyParser(&sessionRequest); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 	if err := sessionRequest.Validate(); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	sessionUsecase := usecase.NewSessionUsecase(v1.storage)
 	session, err := sessionUsecase.Create(ctx.Context(), sessionRequest)
 	if err != nil && errors.Is(err, usecase.ErrInvalidCreds) {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: err.Error()})
 	} else if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	bearerToken := fmt.Sprintf("Token token=%s", session.ID)
@@ -123,12 +123,12 @@ func (v1 v1Handler) CreateSession(ctx *fiber.Ctx) error {
 func (v1 v1Handler) DeleteSession(ctx *fiber.Ctx) error {
 	currentUser, ok := ctx.UserContext().Value("current_user").(*user.User)
 	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: "invalid creds"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: "invalid creds"})
 	}
 
 	sessionUsecase := usecase.NewSessionUsecase(v1.storage)
 	if err := sessionUsecase.Delete(ctx.Context(), currentUser); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	ctx.Context().RemoveUserValue("current_token")
@@ -154,10 +154,10 @@ func (v1 v1Handler) DeleteSession(ctx *fiber.Ctx) error {
 func (v1 v1Handler) SaveOrder(ctx *fiber.Ctx) error {
 	var saveOrderRequest request.SaveOrderRequest
 	if err := saveOrderRequest.Parse(ctx.Body()); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 	if err := saveOrderRequest.Validate(); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	currentUser := ctx.Locals("current_user").(*user.User)
@@ -213,6 +213,17 @@ func (v1 v1Handler) getOrderInfo(ctx *fasthttp.RequestCtx, newOrder *order.Order
 	}
 }
 
+// GetOrders godoc
+//
+//	@Summary		Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
+//	@Tags			Заказ
+//	@Accept			text/plain
+//	@Produce		application/json
+//	@Success		200		{string}	json	"успешная обработка запроса"
+//	@Success		204		{string}	json	"нет данных для ответа"
+//	@Failure		401		{string}	error	"пользователь не аутентифицирован"
+//	@Failure		500		{string}	error	"внутренняя ошибка сервера"
+//	@Router			/api/user/orders	[post]
 func (v1 v1Handler) GetOrders(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
 	orderUsecase := usecase.NewOrderUsecase(v1.storage)
@@ -242,10 +253,10 @@ func (v1 v1Handler) GetBalance(ctx *fiber.Ctx) error {
 func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
 	var wRequest request.WithdrawRequest
 	if err := ctx.BodyParser(&wRequest); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 	if err := wRequest.Validate(); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	currentUser := ctx.Locals("current_user").(*user.User)
@@ -253,11 +264,11 @@ func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
 
 	err := withdrawalUsecase.Create(ctx.Context(), wRequest, currentUser)
 	if err != nil && errors.Is(err, usecase.ErrNotEnoughBalance) {
-		return ctx.Status(fiber.StatusPaymentRequired).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusPaymentRequired).JSON(presenter.Common{Success: false, Message: err.Error()})
 	} else if err != nil && errors.Is(err, usecase.ErrOrderUserIncorrect) {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	} else if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	return ctx.JSON(presenter.Common{Success: true})
@@ -268,7 +279,7 @@ func (v1 v1Handler) Withdrawals(ctx *fiber.Ctx) error {
 	withdrawalsUsecase := usecase.NewWithdrawalUsecase(v1.storage)
 	withdrawals, err := withdrawalsUsecase.FindAll(ctx.Context(), currentUser)
 	if err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Payload: err.Error()})
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
 	if len(withdrawals) == 0 {

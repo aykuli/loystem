@@ -12,7 +12,7 @@ import (
 
 var (
 	selectOrderByNumberSQL  = `SELECT id, number, user_id, status FROM orders WHERE number = @number`
-	insertOrderSQL          = `INSERT INTO orders (number, user_id, status) VALUES (@number, @user_id, @status) RETURNING id`
+	insertOrderSQL          = `INSERT INTO orders (number, user_id, accrual, status) VALUES (@number, @user_id, @accrual, @status) RETURNING id`
 	updateOrderSQL          = `UPDATE orders SET (accrual, status) = (@accrual, @status) WHERE number = @number RETURNING id, number, user_id, status, accrual, uploaded_at`
 	selectOrdersByUserIDSQL = `SELECT id, number, user_id, status,accrual FROM orders WHERE user_id = @user_id`
 )
@@ -36,7 +36,7 @@ func (r *OrdersRepository) FindByNumber(ctx context.Context, tx pgx.Tx, number s
 }
 
 func (r *OrdersRepository) Save(ctx context.Context, tx pgx.Tx, number string, userID int) (*order.Order, error) {
-	args := pgx.NamedArgs{"number": number, "user_id": userID, "status": order.StatusNew}
+	args := pgx.NamedArgs{"number": number, "user_id": userID, "accrual": 0, "status": order.StatusNew}
 	result := tx.QueryRow(ctx, insertOrderSQL, args)
 	var id int
 	if err := result.Scan(&id); err != nil {

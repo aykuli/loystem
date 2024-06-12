@@ -29,13 +29,13 @@ func Authorize(db storage.Storage) func(ctx *fiber.Ctx) error {
 		if authHeader != "" {
 			token = extractToken(authHeader)
 			if token == "" {
-				return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: errUnauththorized.Error()})
+				return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: errUnauththorized.Error()})
 			}
 		}
 
 		foundUser, err := db.FindUserByToken(ctx.Context(), token)
 		if err != nil {
-			return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: errUnauththorized.Error()})
+			return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: errUnauththorized.Error()})
 		}
 
 		ctx.Locals("current_user", foundUser)

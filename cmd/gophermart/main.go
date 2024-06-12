@@ -17,7 +17,6 @@ import (
 )
 
 func main() {
-	fmt.Printf("config: %+v\n\n", config.Options)
 	db, err := postgres.NewStorage(config.Options.DatabaseURI)
 	if err != nil {
 		log.Fatal(err)
