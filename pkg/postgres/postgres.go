@@ -17,7 +17,7 @@ type DBStorage struct {
 
 func NewStorage(uri string) (*DBStorage, error) {
 	ctx := context.Background()
-	var s *DBStorage
+	var s DBStorage
 	tryCount := 0
 	createConn := func() error {
 		word := "try"
@@ -52,7 +52,7 @@ func NewStorage(uri string) (*DBStorage, error) {
 		return &DBStorage{}, err
 	}
 
-	return s, nil
+	return &s, nil
 }
 
 func (s *DBStorage) init(ctx context.Context) error {
