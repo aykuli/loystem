@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type Config struct {
@@ -28,6 +30,10 @@ var Options = Config{
 
 func init() {
 	parseFlags()
+	err := env.Parse(&Options)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func parseFlags() {
