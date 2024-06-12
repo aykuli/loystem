@@ -175,6 +175,7 @@ func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
 	}
 
 	if err := wRequest.Validate(); err != nil {
+		fmt.Printf("\n\nvalidate error: %+v\n\n", err)
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
 
@@ -182,6 +183,8 @@ func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
 	withdrawalUsecase := usecase.NewWithdrawalUsecase(v1.storage)
 
 	err := withdrawalUsecase.Create(ctx.Context(), wRequest, currentUser)
+	fmt.Printf("\n\n1 create error: %+v\n\n", err)
+
 	if err != nil && errors.Is(err, usecase.ErrNotEnoughBalance) {
 		return ctx.Status(fiber.StatusPaymentRequired).JSON(presenter.Common{Success: false, Message: err.Error()})
 	} else if err != nil && errors.Is(err, usecase.ErrOrderUserIncorrect) {

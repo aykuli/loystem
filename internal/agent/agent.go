@@ -16,6 +16,7 @@ type GophermartAgent struct {
 }
 
 var ErrNoSuchOrder = errors.New("no such order")
+var ErrTooManyRequests = errors.New("too many requests")
 
 func New(url string) *GophermartAgent {
 	return &GophermartAgent{url}
@@ -31,10 +32,12 @@ func (a *GophermartAgent) GetOrderInfo(o *order.Order) (*order.Order, error) {
 		return nil, errs[0]
 	}
 
-	//todo if code == 429 reetry
+	if code == fiber.StatusTooManyRequests {
+		return nil, ErrTooManyRequests
+	}
 
 	if code == fiber.StatusNoContent {
-		//should we remove order if its not registred in system
+		//should we remove order if its not registered in system
 		return nil, ErrNoSuchOrder
 	}
 
