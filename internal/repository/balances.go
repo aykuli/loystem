@@ -40,11 +40,11 @@ func (r *BalancesRepository) Create(ctx context.Context, tx pgx.Tx, currUser *us
 func (r *BalancesRepository) FindByUser(ctx context.Context, tx pgx.Tx, currUser *user.User) (*balance.Balance, error) {
 	args := pgx.NamedArgs{"user_id": currUser.ID}
 	result := tx.QueryRow(ctx, selectBalanceSQL, args)
-	var b *balance.Balance
+	var b balance.Balance
 	if err := result.Scan(&b.ID, &b.Current, &b.UserID); err != nil {
 		return nil, err
 	}
-	return b, nil
+	return &b, nil
 }
 
 func (r *BalancesRepository) Increase(ctx context.Context, tx pgx.Tx, o *order.Order, currUser *user.User) error {
