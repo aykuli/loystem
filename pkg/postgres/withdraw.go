@@ -41,10 +41,12 @@ func (s *DBStorage) CreateWithdraw(ctx *fasthttp.RequestCtx, processedOrder *ord
 
 	withdrawalsRepo := repository.NewWithdrawalsRepository(conn)
 	balanceRepo := repository.NewBalancesRepository(conn)
+
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return newDBError(err)
 	}
+
 	userBalance, err := balanceRepo.FindByUser(ctx, tx, currUser)
 	if err != nil {
 		return rollbackOnErr(ctx, tx, err)
@@ -54,6 +56,7 @@ func (s *DBStorage) CreateWithdraw(ctx *fasthttp.RequestCtx, processedOrder *ord
 	if err != nil {
 		return rollbackOnErr(ctx, tx, err)
 	}
+
 	err = balanceRepo.Decrease(ctx, tx, withdraw, currUser)
 	if err != nil {
 		return rollbackOnErr(ctx, tx, err)

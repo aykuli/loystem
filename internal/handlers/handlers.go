@@ -223,7 +223,7 @@ func (v1 v1Handler) getOrderInfo(ctx *fasthttp.RequestCtx, newOrder *order.Order
 //	@Success		204		{string}	json	"нет данных для ответа"
 //	@Failure		401		{string}	error	"пользователь не аутентифицирован"
 //	@Failure		500		{string}	error	"внутренняя ошибка сервера"
-//	@Router			/api/user/orders	[post]
+//	@Router			/api/user/orders	[get]
 func (v1 v1Handler) GetOrders(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
 	orderUsecase := usecase.NewOrderUsecase(v1.storage)
@@ -239,6 +239,16 @@ func (v1 v1Handler) GetOrders(ctx *fiber.Ctx) error {
 	return ctx.JSON(presenter.NewOrdersResponse(orders))
 }
 
+// GetBalance godoc
+//
+//	@Summary		Получение текущего баланса пользователя
+//	@Tags			Баланс
+//	@Accept			text/plain
+//	@Produce		application/json
+//	@Success		200		{string}	json	"успешная обработка запроса"
+//	@Failure		401		{string}	error	"пользователь не аутентифицирован"
+//	@Failure		500		{string}	error	"внутренняя ошибка сервера"
+//	@Router			/api/user/balance	[get]
 func (v1 v1Handler) GetBalance(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
 	usersUsecase := usecase.NewUserUsecase(v1.storage)
@@ -250,11 +260,24 @@ func (v1 v1Handler) GetBalance(ctx *fiber.Ctx) error {
 	return ctx.JSON(presenter.NewBalanceResponse(balance, withdrawals))
 }
 
+// Withdraw godoc
+//
+//	@Summary		Получение текущего баланса пользователя
+//	@Tags			Баланс
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Success		200		{string}	json	"успешная обработка запроса"
+//	@Failure		401		{string}	error	"пользователь не аутентифицирован"
+//	@Failure		500		{string}	error	"внутренняя ошибка сервера"
+//	@Router			/api/user/balance/withdraw	[post]
 func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
+	ctx.Accepts("application/json")
+
 	var wRequest request.WithdrawRequest
 	if err := ctx.BodyParser(&wRequest); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
+
 	if err := wRequest.Validate(); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(presenter.Common{Success: false, Message: err.Error()})
 	}
@@ -274,6 +297,16 @@ func (v1 v1Handler) Withdraw(ctx *fiber.Ctx) error {
 	return ctx.JSON(presenter.Common{Success: true})
 }
 
+// Withdrawals godoc
+//
+//	@Summary		Получение информации о выводе средств
+//	@Tags			Списания
+//	@Produce		application/json
+//	@Success		200		{string}	json	"успешная обработка запроса"
+//	@Success		204		{string}	json	"нет ни одного списания"
+//	@Failure		401		{string}	error	"пользователь не аутентифицирован"
+//	@Failure		500		{string}	error	"внутренняя ошибка сервера"
+//	@Router			/api/user/withdrawals	    [get]
 func (v1 v1Handler) Withdrawals(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
 	withdrawalsUsecase := usecase.NewWithdrawalUsecase(v1.storage)
@@ -283,7 +316,7 @@ func (v1 v1Handler) Withdrawals(ctx *fiber.Ctx) error {
 	}
 
 	if len(withdrawals) == 0 {
-		return ctx.Status(fiber.StatusAccepted).JSON(presenter.Common{Success: true})
+		return ctx.Status(fiber.StatusNoContent).JSON(presenter.Common{Success: true})
 	}
 	return ctx.JSON(presenter.NewWithdrawalsResponse(withdrawals))
 }

@@ -4,10 +4,10 @@ import "time"
 
 type Order struct {
 	ID         int
-	Number     string    `json:"number"`
-	Accrual    float64   `json:"accrual"`
-	UploadedAt time.Time `json:"uploaded_at"`
-	Status     string    `json:"status"`
+	Number     string
+	Accrual    float64
+	UploadedAt time.Time
+	Status     string
 	UserID     int
 }
 

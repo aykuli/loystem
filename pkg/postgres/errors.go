@@ -36,7 +36,6 @@ func newDBError(err error) error {
 		}
 
 	}
-	fmt.Printf("Err: %+v\n\n", err)
 
 	return &postgresError{
 		name: name,

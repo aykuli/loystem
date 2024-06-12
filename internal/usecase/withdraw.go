@@ -5,6 +5,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
+	"lystem/internal/models/order"
 	"lystem/internal/models/user"
 	"lystem/internal/models/withdrawal"
 	"lystem/internal/request"
@@ -25,13 +26,15 @@ func NewWithdrawalUsecase(db storage.Storage) *WithdrawalUsecase {
 }
 
 func (uc *WithdrawalUsecase) Create(ctx *fasthttp.RequestCtx, wRequest request.WithdrawRequest, currentUser *user.User) error {
-	order, err := uc.db.FindOrderByNumber(ctx, wRequest.Order)
+	foundOrder, err := uc.db.FindOrderByNumber(ctx, wRequest.Order)
 	if err != nil {
 		return err
 	}
-
+	if foundOrder == nil || foundOrder.Status != order.StatusProcessed {
+		return ErrOrderUserIncorrect
+	}
 	// does it needed to check order status
-	if order.UserID != currentUser.ID {
+	if foundOrder.UserID != currentUser.ID {
 		return ErrOrderUserIncorrect
 	}
 
@@ -43,7 +46,7 @@ func (uc *WithdrawalUsecase) Create(ctx *fasthttp.RequestCtx, wRequest request.W
 		return ErrNotEnoughBalance
 	}
 
-	return uc.db.CreateWithdraw(ctx, order, currentUser, wRequest.Sum)
+	return uc.db.CreateWithdraw(ctx, foundOrder, currentUser, wRequest.Sum)
 }
 
 func (uc *WithdrawalUsecase) FindAll(ctx *fasthttp.RequestCtx, currUser *user.User) ([]withdrawal.Withdrawal, error) {

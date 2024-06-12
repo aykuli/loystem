@@ -49,7 +49,7 @@ func main() {
 
 	api.Get("/balance", v1.GetBalance)
 	api.Post("/balance/withdraw", v1.Withdraw)
-	api.Post("/withdrawals", v1.Withdrawals)
+	api.Get("/withdrawals", v1.Withdrawals)
 
 	if err := app.Listen(config.Options.Address); err != nil {
 		c <- os.Interrupt
