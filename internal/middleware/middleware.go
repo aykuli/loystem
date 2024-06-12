@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -9,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"lystem/internal/presenter"
-	"lystem/pkg/postgres"
+	"lystem/internal/storage"
 )
 
 var ignorePaths = []string{
@@ -19,32 +18,30 @@ var ignorePaths = []string{
 
 var errUnauththorized = errors.New("не удалось идентифицировать пользователя")
 
-func Authorize(ctx *fiber.Ctx) error {
+func Authorize(db storage.Storage) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		if ctx.Method() == fiber.MethodPost && slices.Contains(ignorePaths, ctx.Path()) {
+			return ctx.Next()
+		}
 
-	if ctx.Method() == fiber.MethodPost && slices.Contains(ignorePaths, ctx.Path()) {
+		var token string
+		authHeader := ctx.Get(fiber.HeaderAuthorization)
+		if authHeader != "" {
+			token = extractToken(authHeader)
+			if token == "" {
+				return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: errUnauththorized.Error()})
+			}
+		}
+
+		foundUser, err := db.FindUserByToken(ctx.Context(), token)
+		if err != nil {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Message: errUnauththorized.Error()})
+		}
+
+		ctx.Locals("current_user", foundUser)
+		ctx.Locals("current_token", token)
 		return ctx.Next()
 	}
-
-	var token string
-	authHeader := ctx.Get(fiber.HeaderAuthorization)
-	if authHeader != "" {
-		token = extractToken(authHeader)
-		if token == "" {
-			return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: errUnauththorized.Error()})
-		}
-	}
-
-	u, err := postgres.FindUserByToken(ctx.Context(), token)
-	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.Common{Success: false, Payload: errUnauththorized.Error()})
-	}
-
-	type currentUser string
-	type currentToken string
-	ctx.SetUserContext(context.WithValue(ctx.Context(), currentUser("current_user"), *u))
-	ctx.SetUserContext(context.WithValue(ctx.UserContext(), currentToken("current_token"), token))
-
-	return ctx.Next()
 }
 
 // Extracts token from header value

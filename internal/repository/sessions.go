@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	insertSQL   = "INSERT INTO sessions (user_id) VALUES (@user_id) RETURNING id, created_at"
-	deleteSQL   = "DELETE FROM sessions WHERE user_id = @user_id"
-	findByIDSQL = "SELECT id, user_id, created_at FROM sessions WHERE user_id = @user_id"
+	insertSQL   = `INSERT INTO sessions (user_id) VALUES (@user_id) RETURNING id, created_at`
+	deleteSQL   = `DELETE FROM sessions WHERE user_id = @user_id`
+	findByIDSQL = `SELECT id, user_id, created_at FROM sessions WHERE id = @id`
 )
 
 type SessionsRepository struct {
@@ -25,15 +25,18 @@ func NewSessionsRepository(conn *pgxpool.Conn) *SessionsRepository {
 }
 
 func (r *SessionsRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User) (*session.Session, error) {
-	result := tx.QueryRow(ctx, insertSQL, pgx.NamedArgs{"user_id": u.ID})
-	var newSession session.Session
-	err := result.Scan(&newSession.ID, &newSession.CreatedAt)
-	if err != nil {
+	// delete all user's prev sessions
+	if err := r.Delete(ctx, tx, u); err != nil {
 		return nil, err
 	}
 
-	// returns new sessions and deletes all user's prev sessions
-	return &newSession, r.Delete(ctx, tx, u)
+	result := tx.QueryRow(ctx, insertSQL, pgx.NamedArgs{"user_id": u.ID})
+	var newSession session.Session
+	if err := result.Scan(&newSession.ID, &newSession.CreatedAt); err != nil {
+		return nil, err
+	}
+
+	return &newSession, nil
 }
 
 func (r *SessionsRepository) FindByID(ctx context.Context, tx pgx.Tx, id string) (*session.Session, error) {

@@ -44,3 +44,7 @@ gophermarttest \
 * <https://habr.com/ru/articles/771626/>
 * <https://followtheprocess.github.io/posts/graceful_shutdown/>
 * <https://www.sobyte.net/post/2021-10/go-http-server-shudown-done-right/>
+
+## ISSUES
+
+* uploaded_at in responses are weird, not now()

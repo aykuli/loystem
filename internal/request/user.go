@@ -7,7 +7,6 @@ import (
 type CreateUser struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
-	//todo add password_confirmation
 }
 
 var (

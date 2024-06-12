@@ -7,7 +7,7 @@ import (
 )
 
 type Session struct {
-	ID        uuid.UUID `json:"id"`
+	ID        uuid.UUID
 	CreatedAt time.Time
-	UserID    int64
+	UserID    int
 }
