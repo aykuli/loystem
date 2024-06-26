@@ -41,10 +41,3 @@ O[Create poller p] -->A
   C -- no --> A
   D[Descrease p.limit about 1] --> A
 ```
-
-## TODOs
-
-* FindAll orders rename
-* to read
-  * time.Tick(p.interval)
-  * time.After(p.interval)

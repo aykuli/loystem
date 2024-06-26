@@ -3,8 +3,6 @@ package presenter
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"lystem/internal/models/balance"
 	"lystem/internal/models/order"
 	"lystem/internal/models/withdrawal"
@@ -22,11 +20,6 @@ func NewSuccess(payload interface{}) *Common {
 
 func NewFailure(err error) *Common {
 	return &Common{Success: false, Message: err.Error()}
-}
-
-type Session struct {
-	Token     uuid.UUID `json:"token"`
-	CreatedAt time.Time `json:"created_at"`
 }
 
 type ResponseOrder struct {

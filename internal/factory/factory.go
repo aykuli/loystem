@@ -15,10 +15,6 @@ const (
 type UserFactory struct {
 }
 
-type UserFactoryMethods interface {
-	Build(user request.CreateUser) (user.User, error)
-}
-
 func NewUserFactory() *UserFactory {
 	return &UserFactory{}
 }

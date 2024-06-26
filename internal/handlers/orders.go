@@ -53,7 +53,7 @@ func (v1 v1Handler) SaveOrder(ctx *fiber.Ctx) error {
 
 	newOrder, err := orderUsecase.Save(ctx.Context(), saveOrderRequest, currentUser)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.Common{})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.NewFailure(err))
 	}
 
 	go v1.agent.GetOneOrderInfo(ctx.Context(), newOrder, 0)
