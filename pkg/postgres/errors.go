@@ -15,9 +15,7 @@ type postgresError struct {
 	Err  error
 }
 
-var (
-	ErrUserAlreadyExists = errors.New("логин уже занят")
-)
+var ErrUserAlreadyExists = errors.New("логин уже занят")
 
 func (dbErr *postgresError) Error() string {
 	return fmt.Sprintf("[%s] %v", dbErr.name, dbErr.Err.Error())

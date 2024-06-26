@@ -56,8 +56,7 @@ func (s *DBStorage) CreateWithdraw(ctx context.Context, orderNumber string, curr
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
 
-	err = balanceRepo.Decrease(ctx, tx, withdraw, currUser)
-	if err != nil {
+	if err = balanceRepo.Decrease(ctx, tx, withdraw, currUser); err != nil {
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
 

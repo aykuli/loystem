@@ -7,9 +7,7 @@ type CreateSession struct {
 	Password string `json:"password"`
 }
 
-var (
-	errInvalidCreds = errors.New("неверный формат запроса")
-)
+var errInvalidCreds = errors.New("неверный формат запроса")
 
 func (s *CreateSession) Validate() error {
 	if s.Login == "" || s.Password == "" {

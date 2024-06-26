@@ -50,7 +50,6 @@ func (s *DBStorage) SaveOrder(ctx context.Context, number string, userID int) (*
 	defer conn.Release()
 
 	ordersRepo := repository.NewOrdersRepository(conn)
-
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, newDBError(err)
@@ -77,8 +76,8 @@ func (s *DBStorage) UpdateOrder(ctx context.Context, newOrder *order.Order) (*or
 	if err != nil {
 		return nil, newDBError(err)
 	}
+
 	updatedOrder, err := ordersRepo.Update(ctx, tx, newOrder)
-	
 	if err != nil {
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
@@ -94,6 +93,7 @@ func (s *DBStorage) SelectUserOrders(ctx context.Context, u *user.User) ([]order
 		return nil, newDBError(err)
 	}
 	defer conn.Release()
+
 	ordersRepo := repository.NewOrdersRepository(conn)
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -116,6 +116,7 @@ func (s *DBStorage) SelectAccrualOrders(ctx context.Context) ([]order.Order, err
 		return nil, newDBError(err)
 	}
 	defer conn.Release()
+
 	ordersRepo := repository.NewOrdersRepository(conn)
 	tx, err := conn.Begin(ctx)
 	if err != nil {

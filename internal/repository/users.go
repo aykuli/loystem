@@ -28,8 +28,7 @@ func (r *UsersRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User) (
 	result := tx.QueryRow(ctx, insertUserSQL, args)
 
 	var id int
-	err := result.Scan(&id)
-	if err != nil {
+	if err := result.Scan(&id); err != nil {
 		return nil, err
 	}
 	return &user.User{
@@ -42,10 +41,8 @@ func (r *UsersRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User) (
 
 func (r *UsersRepository) FindByLogin(login string) (*user.User, error) {
 	var u user.User
-	args := pgx.NamedArgs{"login": login}
-	result := r.conn.QueryRow(context.Background(), findUserByLoginSQL, args)
-	err := result.Scan(&u.ID, &u.Login, &u.HashedPassword, &u.Salt)
-	if err != nil {
+	result := r.conn.QueryRow(context.Background(), findUserByLoginSQL, pgx.NamedArgs{"login": login})
+	if err := result.Scan(&u.ID, &u.Login, &u.HashedPassword, &u.Salt); err != nil {
 		return nil, err
 	}
 	return &u, nil
@@ -53,10 +50,8 @@ func (r *UsersRepository) FindByLogin(login string) (*user.User, error) {
 
 func (r *UsersRepository) FindByID(id int) (*user.User, error) {
 	var u user.User
-	args := pgx.NamedArgs{"id": id}
-	result := r.conn.QueryRow(context.Background(), findUserByIDSQL, args)
-	err := result.Scan(&u.ID)
-	if err != nil {
+	result := r.conn.QueryRow(context.Background(), findUserByIDSQL, pgx.NamedArgs{"id": id})
+	if err := result.Scan(&u.ID); err != nil {
 		return nil, err
 	}
 	return &u, nil

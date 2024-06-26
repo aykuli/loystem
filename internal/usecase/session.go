@@ -27,7 +27,6 @@ func (uc *SessionUsecase) Create(ctx context.Context, sessionRequest request.Cre
 	}
 
 	valid := foundUser.ValidatePassword(sessionRequest.Password)
-
 	if !valid {
 		return nil, ErrInvalidCreds
 	}

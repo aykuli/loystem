@@ -41,8 +41,7 @@ func (s *DBStorage) CreateUser(ctx context.Context, newUser *user.User) (*user.U
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
 
-	_, err = balancesRepo.Create(ctx, tx, savedUser)
-	if err != nil {
+	if _, err = balancesRepo.Create(ctx, tx, savedUser); err != nil {
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
 

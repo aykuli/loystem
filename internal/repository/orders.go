@@ -27,8 +27,7 @@ func NewOrdersRepository(conn *pgxpool.Conn) *OrdersRepository {
 }
 
 func (r *OrdersRepository) FindByNumber(ctx context.Context, tx pgx.Tx, number string) (*order.Order, error) {
-	args := pgx.NamedArgs{"number": number}
-	result := tx.QueryRow(ctx, selectOrderByNumberSQL, args)
+	result := tx.QueryRow(ctx, selectOrderByNumberSQL, pgx.NamedArgs{"number": number})
 	var scannedOrder order.Order
 	if err := result.Scan(&scannedOrder.ID, &scannedOrder.Number, &scannedOrder.UserID, &scannedOrder.Status); err != nil {
 		return nil, err
@@ -58,8 +57,7 @@ func (r *OrdersRepository) Update(ctx context.Context, tx pgx.Tx, newOrder *orde
 }
 
 func (r *OrdersRepository) SelectUserOrders(ctx context.Context, tx pgx.Tx, u *user.User) ([]order.Order, error) {
-	args := pgx.NamedArgs{"user_id": u.ID}
-	rows, err := tx.Query(ctx, selectOrdersByUserIDSQL, args)
+	rows, err := tx.Query(ctx, selectOrdersByUserIDSQL, pgx.NamedArgs{"user_id": u.ID})
 	if err != nil {
 		return nil, err
 	}

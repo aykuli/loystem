@@ -42,8 +42,7 @@ func (r *SessionsRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User
 func (r *SessionsRepository) FindByID(ctx context.Context, tx pgx.Tx, id string) (*session.Session, error) {
 	result := tx.QueryRow(ctx, findByIDSQL, pgx.NamedArgs{"id": id})
 	var foundSession session.Session
-	err := result.Scan(&foundSession.ID, &foundSession.UserID, &foundSession.CreatedAt)
-	if err != nil {
+	if err := result.Scan(&foundSession.ID, &foundSession.UserID, &foundSession.CreatedAt); err != nil {
 		return nil, err
 	}
 
