@@ -3,10 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func New(db storage.Storage, options config.Config, logger *zap.Logger) *Agent {
 	}
 }
 
-func (p *Agent) StartOrdersPolling(ctx context.Context) {
+func (p *Agent) StartOrdersPolling(ctx context.Context, wg *sync.WaitGroup) {
 	ordersTimer := time.NewTimer(p.waitBeforePoll)
 
 	for {
@@ -45,8 +45,9 @@ func (p *Agent) StartOrdersPolling(ctx context.Context) {
 			p.PollOrdersInfo(ctx)
 			ordersTimer.Reset(p.waitBeforePoll)
 		case <-ctx.Done():
-			fmt.Println("Gracefully stop orders timer")
+			p.logger.Info("4 Gracefully stop orders timer")
 			ordersTimer.Stop()
+			wg.Done()
 			return
 		}
 	}

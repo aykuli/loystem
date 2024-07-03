@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -32,14 +33,14 @@ func main() {
 	}
 	defer zapLogger.Sync()
 
-	// ------- CHANNELS TO SYNC GRACEFULLY SHUTDOWN -------
-	appShutdownCh := make(chan os.Signal, 1)
-	exitCh := make(chan os.Signal, 1)
+	// ------- CONTEXT & WAIT GROUP FOR SYNC AGENT GOROUTINE GRACEFULLY SHUTDOWN WITH APPLICATION'S & DB -------
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
 
 	// ------- ORDERS INFO POLLER -------
-	ctx, cancel := context.WithCancel(context.Background())
 	ordersAgent := agent.New(db, config.Options, zapLogger)
-	go ordersAgent.StartOrdersPolling(ctx)
+	wg.Add(1)
+	go ordersAgent.StartOrdersPolling(ctx, &wg)
 
 	// ------- INIT APP -------
 	app := fiber.New()
@@ -60,32 +61,47 @@ func main() {
 	api.Get("/withdrawals", v1.Withdrawals)
 
 	// ------- GRACEFULLY SHUTDOWN -------
+	exit := make(chan os.Signal, 1)
+	waiter := make(chan os.Signal, 1)
 	go func() {
-		// wait until app.Listen got error and appShutdownCh got notification
-		<-appShutdownCh
+		// waiter wait until it gets application interrupting signals
+		// and send this signal to waiter channel
+		signal.Notify(waiter, syscall.SIGTERM, syscall.SIGINT)
+
+		// blocks here until there's a signal
+		<-waiter
+
+		zapLogger.Info("1 Signal notify os.Interrupt received")
 
 		// cancel context, that we sent to orders poller
 		cancel()
 
-		fmt.Println("Gracefully shutting down loystem application")
-		// shutdown application
+		zapLogger.Info("2 Gracefully shutting down loystem application")
+
 		if err := app.Shutdown(); err != nil {
 			log.Fatal(err)
 		}
-		// gracefully close database connection
-		db.Close()
-		// notify exitCh to stop main goroutine
-		signal.Notify(exitCh, os.Interrupt)
+		zapLogger.Info("3 Application shut down")
 
-		// exit with code 0 to signal, that everything gone right
-		os.Exit(0)
+		wg.Wait()
+		zapLogger.Info("5 Finish waiting agent wait group done()")
+
+		// gracefully close database connection after finishing agent work
+		db.Close()
+		zapLogger.Info("6 Database connections closed")
+
+		// signal main goroutine that gracefully shutdown finished
+		exit <- syscall.SIGINT
 	}()
 
 	// ------- START SERVER -------
 	if err = app.Listen(config.Options.Address); err != nil {
 		zapLogger.Error(err.Error())
-		signal.Notify(appShutdownCh, os.Interrupt)
+		waiter <- syscall.SIGTERM
 	}
 
-	<-exitCh
+	<-exit
+	zapLogger.Info("7 Main goroutine exited.")
+	// exit with code 0 to signal, that everything gone right
+	os.Exit(0)
 }
