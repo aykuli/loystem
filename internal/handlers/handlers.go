@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"lystem/internal/agent"
+	"lystem/internal/config"
 	"lystem/internal/models/user"
 	"lystem/internal/presenter"
 	"lystem/internal/request"
@@ -27,13 +28,14 @@ type Handler interface {
 	Withdrawals(ctx *fiber.Ctx) error
 }
 
-func New(db storage.Storage, agent *agent.Agent) Handler {
-	return v1Handler{storage: db, agent: agent}
+func New(db storage.Storage, agent *agent.Agent, options config.Config) Handler {
+	return v1Handler{storage: db, agent: agent, userSalt: options.UserSalt}
 }
 
 type v1Handler struct {
-	storage storage.Storage
-	agent   *agent.Agent
+	storage  storage.Storage
+	agent    *agent.Agent
+	userSalt string
 }
 
 // CreateUser godoc
@@ -57,7 +59,7 @@ func (v1 v1Handler) CreateUser(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.NewFailure(err))
 	}
 
-	userUsecase := usecase.NewUserUsecase(v1.storage)
+	userUsecase := usecase.NewUserUsecase(v1.storage, v1.userSalt)
 	newSession, err := userUsecase.CreateUserAndSession(ctx.Context(), userRequest)
 	if err != nil && errors.Is(err, postgres.ErrUserAlreadyExists) {
 		return ctx.Status(fiber.StatusConflict).JSON(presenter.NewFailure(err))
@@ -92,7 +94,7 @@ func (v1 v1Handler) CreateSession(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(presenter.NewFailure(err))
 	}
 
-	sessionUsecase := usecase.NewSessionUsecase(v1.storage)
+	sessionUsecase := usecase.NewSessionUsecase(v1.storage, v1.userSalt)
 	session, err := sessionUsecase.Create(ctx.Context(), sessionRequest)
 	if err != nil && errors.Is(err, usecase.ErrInvalidCreds) {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.NewFailure(err))
@@ -123,7 +125,7 @@ func (v1 v1Handler) DeleteSession(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(presenter.NewFailure(errors.New("invalid creds")))
 	}
 
-	sessionUsecase := usecase.NewSessionUsecase(v1.storage)
+	sessionUsecase := usecase.NewSessionUsecase(v1.storage, v1.userSalt)
 	if err := sessionUsecase.Delete(ctx.Context(), currentUser); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.NewFailure(err))
 	}
@@ -145,8 +147,8 @@ func (v1 v1Handler) DeleteSession(ctx *fiber.Ctx) error {
 //	@Router			/api/user/balance	[get]
 func (v1 v1Handler) GetBalance(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
-	usersUsecase := usecase.NewUserUsecase(v1.storage)
-	balance, withdrawals, err := usersUsecase.GetBalance(ctx.Context(), currentUser)
+	usersUsecase := usecase.NewUserUsecase(v1.storage, v1.userSalt)
+	balance, withdrawals, err := usersUsecase.GetBalanceAndWithdrawals(ctx.Context(), currentUser)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.NewFailure(err))
 	}

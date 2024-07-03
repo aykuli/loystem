@@ -26,29 +26,19 @@ func (uc *OrderUsecase) Save(ctx context.Context, req request.SaveOrderRequest, 
 }
 
 func (uc *OrderUsecase) Update(ctx context.Context, newOrder *order.Order) error {
-	savedOrder, err := uc.db.UpdateOrder(ctx, newOrder)
-	if err != nil {
+	if newOrder.Status == order.StatusProcessed {
+		err := uc.db.UpdateOrderAndIncreaseBalance(ctx, newOrder)
 		return err
 	}
 
-	if savedOrder.Status != order.StatusProcessed {
-		return nil
-	}
-
-	if err = uc.db.IncreaseBalance(ctx, savedOrder); err != nil {
-		savedOrder.Status = order.StatusProcessing
-		if _, err = uc.db.UpdateOrder(ctx, savedOrder); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	err := uc.db.UpdateOrder(ctx, newOrder)
+	return err
 }
 
-func (uc *OrderUsecase) FindAllAccrual(ctx context.Context) ([]order.Order, error) {
-	return uc.db.SelectAccrualOrders(ctx)
+func (uc *OrderUsecase) FindAllUnprocessed(ctx context.Context) ([]order.Order, error) {
+	return uc.db.FindAllUnprocessedOrders(ctx)
 }
 
-func (uc *OrderUsecase) FindUserOrders(ctx context.Context, u *user.User) ([]order.Order, error) {
-	return uc.db.SelectUserOrders(ctx, u)
+func (uc *OrderUsecase) FindAllUserOrders(ctx context.Context, u *user.User) ([]order.Order, error) {
+	return uc.db.FindAllUserOrders(ctx, u)
 }

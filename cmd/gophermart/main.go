@@ -46,7 +46,7 @@ func main() {
 	app := fiber.New()
 
 	// ------- HANDLERS -------
-	v1 := handlers.New(db, ordersAgent)
+	v1 := handlers.New(db, ordersAgent, config.Options)
 	app.Use(logger.New(logger.Config{Output: os.Stdout}))
 	api := app.Group("/api/user", middleware.Authorize(db))
 	api.Post("/register", v1.CreateUser)
@@ -64,14 +64,14 @@ func main() {
 	exit := make(chan os.Signal, 1)
 	waiter := make(chan os.Signal, 1)
 	go func() {
-		// waiter wait until it gets application interrupting signals
-		// and send this signal to waiter channel
-		signal.Notify(waiter, syscall.SIGTERM, syscall.SIGINT)
+		// waiter wait until it gets one of:
+		//   |-- application interrupting signals on err | syscall.SIGTERM -- terminated
+		//   |-- keyboard Ctrl+C                         | syscall.SIGINT  -- interrupt
+		signal.Notify(waiter, syscall.SIGTERM, syscall.SIGINT) // terminated
 
 		// blocks here until there's a signal
-		<-waiter
-
-		zapLogger.Info("1 Signal notify os.Interrupt received")
+		sig := <-waiter
+		zapLogger.Info("1 Signal notify received: " + sig.String())
 
 		// cancel context, that we sent to orders poller
 		cancel()
@@ -91,7 +91,7 @@ func main() {
 		zapLogger.Info("6 Database connections closed")
 
 		// signal main goroutine that gracefully shutdown finished
-		exit <- syscall.SIGINT
+		exit <- syscall.SIGSTOP
 	}()
 
 	// ------- START SERVER -------

@@ -18,15 +18,15 @@ type Storage interface {
 	DeleteSession(ctx context.Context, u *user.User) error
 
 	FindBalance(ctx context.Context, u *user.User) (*balance.Balance, error)
-	IncreaseBalance(ctx context.Context, o *order.Order) error
 	DeductFromBalance(ctx context.Context, w *withdrawal.Withdrawal, u *user.User) error
 
-	CreateWithdraw(ctx context.Context, orderNumber string, u *user.User, sum float64) (*withdrawal.Withdrawal, error)
+	CreateWithdrawal(ctx context.Context, orderNumber string, u *user.User, sum float64) (*withdrawal.Withdrawal, error)
 	FindWithdrawals(ctx context.Context, balance *balance.Balance) ([]withdrawal.Withdrawal, error)
 
 	FindOrderByNumber(ctx context.Context, number string) (*order.Order, error)
 	SaveOrder(ctx context.Context, number string, userID int) (*order.Order, error)
-	UpdateOrder(ctx context.Context, o *order.Order) (*order.Order, error)
-	SelectUserOrders(ctx context.Context, u *user.User) ([]order.Order, error)
-	SelectAccrualOrders(ctx context.Context) ([]order.Order, error)
+	UpdateOrder(ctx context.Context, o *order.Order) error
+	UpdateOrderAndIncreaseBalance(ctx context.Context, o *order.Order) error
+	FindAllUserOrders(ctx context.Context, u *user.User) ([]order.Order, error)
+	FindAllUnprocessedOrders(ctx context.Context) ([]order.Order, error)
 }

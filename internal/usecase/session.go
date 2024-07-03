@@ -11,13 +11,14 @@ import (
 )
 
 type SessionUsecase struct {
-	db storage.Storage
+	db   storage.Storage
+	salt string
 }
 
 var ErrInvalidCreds = errors.New("неверная пара логин/пароль")
 
-func NewSessionUsecase(db storage.Storage) *SessionUsecase {
-	return &SessionUsecase{db}
+func NewSessionUsecase(db storage.Storage, salt string) *SessionUsecase {
+	return &SessionUsecase{db, salt}
 }
 
 func (uc *SessionUsecase) Create(ctx context.Context, sessionRequest request.CreateSession) (*session.Session, error) {
@@ -26,7 +27,7 @@ func (uc *SessionUsecase) Create(ctx context.Context, sessionRequest request.Cre
 		return nil, err
 	}
 
-	valid := foundUser.ValidatePassword(sessionRequest.Password)
+	valid := foundUser.ValidatePassword(sessionRequest.Password, uc.salt)
 	if !valid {
 		return nil, ErrInvalidCreds
 	}

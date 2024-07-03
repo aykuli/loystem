@@ -32,7 +32,6 @@ func newDBError(err error) error {
 		if pgerrcode.IsDataException(pgErr.Code) {
 			name = "Postgres. Data Exception"
 		}
-
 	}
 
 	return &postgresError{

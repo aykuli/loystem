@@ -56,8 +56,6 @@ func (v1 v1Handler) SaveOrder(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.NewFailure(err))
 	}
 
-	go v1.agent.GetOneOrderInfo(ctx.Context(), newOrder, 0)
-
 	return ctx.Status(fiber.StatusAccepted).JSON(presenter.NewSuccess(newOrder))
 }
 
@@ -75,7 +73,7 @@ func (v1 v1Handler) SaveOrder(ctx *fiber.Ctx) error {
 func (v1 v1Handler) GetOrders(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(*user.User)
 	orderUsecase := usecase.NewOrderUsecase(v1.storage)
-	orders, err := orderUsecase.FindUserOrders(ctx.Context(), currentUser)
+	orders, err := orderUsecase.FindAllUserOrders(ctx.Context(), currentUser)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(presenter.NewFailure(err))
 	}

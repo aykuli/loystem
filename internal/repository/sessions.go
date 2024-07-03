@@ -26,7 +26,7 @@ func NewSessionsRepository(conn *pgxpool.Conn) *SessionsRepository {
 
 func (r *SessionsRepository) Create(ctx context.Context, tx pgx.Tx, u *user.User) (*session.Session, error) {
 	// delete all user's prev sessions
-	if err := r.Delete(ctx, tx, u); err != nil {
+	if _, err := r.conn.Exec(ctx, deleteSQL, pgx.NamedArgs{"user_id": u.ID}); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func (r *SessionsRepository) FindByID(ctx context.Context, tx pgx.Tx, id string)
 	return &foundSession, nil
 }
 
-func (r *SessionsRepository) Delete(ctx context.Context, tx pgx.Tx, u *user.User) error {
-	_, err := tx.Exec(ctx, deleteSQL, pgx.NamedArgs{"user_id": u.ID})
+func (r *SessionsRepository) Delete(ctx context.Context, u *user.User) error {
+	_, err := r.conn.Exec(ctx, deleteSQL, pgx.NamedArgs{"user_id": u.ID})
 	return err
 }

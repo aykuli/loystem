@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	insertBalanceSQL     = `INSERT INTO balances (user_id, current) VALUES (@user_id, @current) RETURNING id`
-	selectBalanceSQL     = `SELECT id, current, user_id FROM balances WHERE user_id = @user_id`
+	insertBalanceSQL     = `INSERT INTO balances (user_id, current) VALUES (@user_id, @current)`
+	selectBalanceSQL     = `SELECT current, user_id FROM balances WHERE user_id = @user_id`
 	increaseBalanceSQL   = `UPDATE balances SET current = current + @accrual WHERE user_id = @user_id`
 	deductFromBalanceSQL = `UPDATE balances SET current = current - @sum WHERE user_id = @user_id`
 )
@@ -29,19 +29,17 @@ func NewBalancesRepository(conn *pgxpool.Conn) *BalancesRepository {
 
 func (r *BalancesRepository) Create(ctx context.Context, tx pgx.Tx, currUser *user.User) (*balance.Balance, error) {
 	args := pgx.NamedArgs{"user_id": currUser.ID, "current": 0}
-	result := tx.QueryRow(ctx, insertBalanceSQL, args)
-	var id int
-	if err := result.Scan(&id); err != nil {
+	if _, err := tx.Exec(ctx, insertBalanceSQL, args); err != nil {
 		return nil, err
 	}
-	return &balance.Balance{ID: id, Current: 0, UserID: currUser.ID}, nil
+	return &balance.Balance{Current: 0, UserID: currUser.ID}, nil
 }
 
-func (r *BalancesRepository) FindByUser(ctx context.Context, tx pgx.Tx, currUser *user.User) (*balance.Balance, error) {
+func (r *BalancesRepository) FindByUser(ctx context.Context, currUser *user.User) (*balance.Balance, error) {
 	args := pgx.NamedArgs{"user_id": currUser.ID}
-	result := tx.QueryRow(ctx, selectBalanceSQL, args)
+	result := r.conn.QueryRow(ctx, selectBalanceSQL, args)
 	var b balance.Balance
-	if err := result.Scan(&b.ID, &b.Current, &b.UserID); err != nil {
+	if err := result.Scan(&b.Current, &b.UserID); err != nil {
 		return nil, err
 	}
 	return &b, nil
@@ -55,9 +53,9 @@ func (r *BalancesRepository) Accrual(ctx context.Context, tx pgx.Tx, o *order.Or
 	return nil
 }
 
-func (r *BalancesRepository) Decrease(ctx context.Context, tx pgx.Tx, w *withdrawal.Withdrawal, currUser *user.User) error {
+func (r *BalancesRepository) Decrease(ctx context.Context, w *withdrawal.Withdrawal, currUser *user.User) error {
 	args := pgx.NamedArgs{"sum": w.Sum, "user_id": currUser.ID}
-	if _, err := tx.Exec(ctx, deductFromBalanceSQL, args); err != nil {
+	if _, err := r.conn.Exec(ctx, deductFromBalanceSQL, args); err != nil {
 		return err
 	}
 	return nil

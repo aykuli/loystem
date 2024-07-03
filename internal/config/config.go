@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -13,11 +14,14 @@ type Config struct {
 	DatabaseURI          string `env:"DATABASE_URI"`
 	AccrualSystemAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	RequestMaxRetries    int
+	PollInterval         time.Duration
+	UserSalt             string `env:"USER_SALT"`
 }
 
 const (
-	hostDefault = "localhost"
-	portDefault = "8080"
+	hostDefault     = "localhost"
+	portDefault     = "8080"
+	defaultUserSalt = "HavuDuUdoMrPron'ka"
 )
 
 var Options = Config{
@@ -25,12 +29,13 @@ var Options = Config{
 	DatabaseURI:          "",
 	AccrualSystemAddress: "",
 	RequestMaxRetries:    3,
+	PollInterval:         3 * time.Second,
+	UserSalt:             defaultUserSalt,
 }
 
 func init() {
 	parseFlags()
-	err := env.Parse(&Options)
-	if err != nil {
+	if err := env.Parse(&Options); err != nil {
 		log.Fatal(err)
 	}
 
@@ -47,6 +52,7 @@ func parseFlags() {
 	fs.StringVar(&Options.Address, "a", hostDefault+":"+portDefault, "server address to run on")
 	fs.StringVar(&Options.DatabaseURI, "d", "", "database source name")
 	fs.StringVar(&Options.AccrualSystemAddress, "r", "", "accrual system address")
+	fs.StringVar(&Options.UserSalt, "s", "", "salt to register user")
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {

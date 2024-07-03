@@ -17,7 +17,7 @@ func (s *DBStorage) CreateSession(ctx context.Context, currentUser *user.User) (
 
 	sessionsRepo := repository.NewSessionsRepository(conn)
 
-	//find user
+	// transaction used for 2 db table changing operations - creating and deleting sessions
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, newDBError(err)
@@ -31,7 +31,6 @@ func (s *DBStorage) CreateSession(ctx context.Context, currentUser *user.User) (
 	if err = tx.Commit(ctx); err != nil {
 		return nil, newDBError(err)
 	}
-
 	return newSession, nil
 }
 
@@ -44,17 +43,8 @@ func (s *DBStorage) DeleteSession(ctx context.Context, u *user.User) error {
 
 	sessionsRepo := repository.NewSessionsRepository(conn)
 
-	//find user
-	tx, err := conn.Begin(ctx)
+	err = sessionsRepo.Delete(ctx, u)
 	if err != nil {
-		return newDBError(err)
-	}
-
-	err = sessionsRepo.Delete(ctx, tx, u)
-	if err != nil {
-		return rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return newDBError(err)
 	}
 

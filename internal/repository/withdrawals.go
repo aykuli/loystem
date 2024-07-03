@@ -23,8 +23,8 @@ func NewWithdrawalsRepository(conn *pgxpool.Conn) *WithdrawalsRepository {
 	return &WithdrawalsRepository{conn}
 }
 
-func (r *WithdrawalsRepository) FindAll(ctx context.Context, tx pgx.Tx, b *balance.Balance) ([]withdrawal.Withdrawal, error) {
-	rows, err := tx.Query(ctx, selectWithdrawalsSQL, pgx.NamedArgs{"balance_id": b.ID})
+func (r *WithdrawalsRepository) FindAll(ctx context.Context, b *balance.Balance) ([]withdrawal.Withdrawal, error) {
+	rows, err := r.conn.Query(ctx, selectWithdrawalsSQL, pgx.NamedArgs{"balance_id": b.UserID})
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *WithdrawalsRepository) FindAll(ctx context.Context, tx pgx.Tx, b *balan
 }
 
 func (r *WithdrawalsRepository) Create(ctx context.Context, tx pgx.Tx, orderNumber string, userBalance *balance.Balance, sum float64) (*withdrawal.Withdrawal, error) {
-	args := pgx.NamedArgs{"order_number": orderNumber, "balance_id": userBalance.ID, "sum": sum}
+	args := pgx.NamedArgs{"order_number": orderNumber, "balance_id": userBalance.UserID, "sum": sum}
 	result := tx.QueryRow(ctx, insertWithdrawalSQL, args)
 	var wd = withdrawal.Withdrawal{OrderNumber: orderNumber}
 	if err := result.Scan(&wd.ID, &wd.Sum, &wd.BalanceID); err != nil {

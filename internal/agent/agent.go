@@ -30,7 +30,7 @@ func New(db storage.Storage, options config.Config, logger *zap.Logger) *Agent {
 	return &Agent{
 		storage:           db,
 		logger:            logger.Sugar(),
-		waitBeforePoll:    10 * time.Second,
+		waitBeforePoll:    options.PollInterval,
 		requestMaxRetries: options.RequestMaxRetries,
 		url:               options.AccrualSystemAddress,
 	}
@@ -55,7 +55,7 @@ func (p *Agent) StartOrdersPolling(ctx context.Context, wg *sync.WaitGroup) {
 
 func (p *Agent) PollOrdersInfo(ctx context.Context) {
 	orderUsecase := usecase.NewOrderUsecase(p.storage)
-	orders, err := orderUsecase.FindAllAccrual(ctx)
+	orders, err := orderUsecase.FindAllUnprocessed(ctx)
 	if err != nil {
 		p.logger.Warn("failed to find orders", "error", err)
 	}
@@ -68,14 +68,15 @@ func (p *Agent) PollOrdersInfo(ctx context.Context) {
 	}
 
 	for _, o := range orders {
-		if ctx.Err() != nil {
-			return
-		}
 		p.GetOneOrderInfo(ctx, &o, 0)
 	}
 }
 
 func (p *Agent) GetOneOrderInfo(ctx context.Context, o *order.Order, retryCount int) {
+	if ctx.Err() != nil {
+		return
+	}
+
 	resp, err := http.Get(p.url + "/api/orders/" + o.Number)
 	if err != nil {
 		p.logger.Error("failed to get order", "error", err)
@@ -85,8 +86,6 @@ func (p *Agent) GetOneOrderInfo(ctx context.Context, o *order.Order, retryCount 
 	switch resp.StatusCode {
 	case http.StatusOK:
 		p.saveOkOrder(ctx, o, resp.Body)
-	case http.StatusNoContent:
-		p.saveInvalidOrder(ctx, o)
 	case http.StatusTooManyRequests:
 		if retryCount >= p.requestMaxRetries {
 			return

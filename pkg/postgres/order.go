@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -17,26 +18,13 @@ func (s *DBStorage) FindOrderByNumber(ctx context.Context, number string) (*orde
 		return nil, newDBError(err)
 	}
 	defer conn.Release()
+	fmt.Println("1")
 
 	ordersRepo := repository.NewOrdersRepository(conn)
 
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, newDBError(err)
-	}
-	foundOrder, err := ordersRepo.FindByNumber(ctx, tx, number)
+	foundOrder, err := ordersRepo.FindByNumber(ctx, number)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return nil, newDBError(rollbackErr)
-		}
 		return nil, nil
-	}
-
-	if err != nil {
-		return nil, rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, newDBError(err)
 	}
 
 	return foundOrder, nil
@@ -48,46 +36,61 @@ func (s *DBStorage) SaveOrder(ctx context.Context, number string, userID int) (*
 		return nil, newDBError(err)
 	}
 	defer conn.Release()
-
 	ordersRepo := repository.NewOrdersRepository(conn)
-	tx, err := conn.Begin(ctx)
+
+	savedOrder, err := ordersRepo.Save(ctx, number, userID)
 	if err != nil {
-		return nil, newDBError(err)
-	}
-	savedOrder, err := ordersRepo.Save(ctx, tx, number, userID)
-	if err != nil {
-		return nil, rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return nil, newDBError(err)
 	}
 	return savedOrder, nil
 }
 
-func (s *DBStorage) UpdateOrder(ctx context.Context, newOrder *order.Order) (*order.Order, error) {
+func (s *DBStorage) UpdateOrder(ctx context.Context, newOrder *order.Order) error {
 	conn, err := s.instance.Acquire(ctx)
 	if err != nil {
-		return nil, newDBError(err)
+		return newDBError(err)
 	}
 	defer conn.Release()
 
 	ordersRepo := repository.NewOrdersRepository(conn)
-	tx, err := conn.Begin(ctx)
+	err = ordersRepo.Update(ctx, newOrder)
 	if err != nil {
-		return nil, newDBError(err)
+		return newDBError(err)
 	}
-
-	updatedOrder, err := ordersRepo.Update(ctx, tx, newOrder)
-	if err != nil {
-		return nil, rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, newDBError(err)
-	}
-	return updatedOrder, nil
+	return nil
 }
 
-func (s *DBStorage) SelectUserOrders(ctx context.Context, u *user.User) ([]order.Order, error) {
+func (s *DBStorage) UpdateOrderAndIncreaseBalance(ctx context.Context, newOrder *order.Order) error {
+	conn, err := s.instance.Acquire(ctx)
+	if err != nil {
+		return newDBError(err)
+	}
+	defer conn.Release()
+
+	ordersRepo := repository.NewOrdersRepository(conn)
+	balancesRepo := repository.NewBalancesRepository(conn)
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return newDBError(err)
+	}
+
+	updatedOrder, err := ordersRepo.UpdateReturning(ctx, tx, newOrder)
+	if err != nil {
+		return rollbackOnErr(ctx, tx, err)
+	}
+	if err = balancesRepo.Accrual(ctx, tx, updatedOrder); err != nil {
+		return rollbackOnErr(ctx, tx, err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return newDBError(err)
+	}
+
+	return nil
+}
+
+func (s *DBStorage) FindAllUserOrders(ctx context.Context, u *user.User) ([]order.Order, error) {
 	conn, err := s.instance.Acquire(ctx)
 	if err != nil {
 		return nil, newDBError(err)
@@ -95,22 +98,15 @@ func (s *DBStorage) SelectUserOrders(ctx context.Context, u *user.User) ([]order
 	defer conn.Release()
 
 	ordersRepo := repository.NewOrdersRepository(conn)
-	tx, err := conn.Begin(ctx)
+	orders, err := ordersRepo.FindAllUserOrders(ctx, u)
 	if err != nil {
 		return nil, newDBError(err)
 	}
 
-	orders, err := ordersRepo.SelectUserOrders(ctx, tx, u)
-	if err != nil {
-		return nil, rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, newDBError(err)
-	}
 	return orders, nil
 }
 
-func (s *DBStorage) SelectAccrualOrders(ctx context.Context) ([]order.Order, error) {
+func (s *DBStorage) FindAllUnprocessedOrders(ctx context.Context) ([]order.Order, error) {
 	conn, err := s.instance.Acquire(ctx)
 	if err != nil {
 		return nil, newDBError(err)
@@ -118,16 +114,8 @@ func (s *DBStorage) SelectAccrualOrders(ctx context.Context) ([]order.Order, err
 	defer conn.Release()
 
 	ordersRepo := repository.NewOrdersRepository(conn)
-	tx, err := conn.Begin(ctx)
+	orders, err := ordersRepo.FindAllUnprocessed(ctx)
 	if err != nil {
-		return nil, newDBError(err)
-	}
-
-	orders, err := ordersRepo.SelectAccrualOrders(ctx, tx)
-	if err != nil {
-		return nil, rollbackOnErr(ctx, tx, err)
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return nil, newDBError(err)
 	}
 	return orders, nil

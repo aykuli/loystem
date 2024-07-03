@@ -9,17 +9,15 @@ type User struct {
 	ID             int
 	Login          string
 	HashedPassword string
-	Salt           string
 }
 
-func (u *User) SetHashedPassword(password string, salt []byte) {
+func (u *User) SetHashedPassword(password string, salt string) {
 	u.HashedPassword = u.buildHashedPassword(password, salt)
 }
-func (u *User) buildHashedPassword(password string, salt []byte) string {
+func (u *User) buildHashedPassword(password string, salt string) string {
 	passwordBytes := []byte(password)
 	sha512Hasher := sha512.New()
-
-	passwordBytes = append(passwordBytes, salt...)
+	passwordBytes = append(passwordBytes, []byte(salt)...)
 	// Write password bytes to the hasher
 	sha512Hasher.Write(passwordBytes)
 	// Get the SHA-512 hashed password
@@ -30,8 +28,7 @@ func (u *User) buildHashedPassword(password string, salt []byte) string {
 	return hashedPasswordHex
 }
 
-func (u *User) ValidatePassword(password string) bool {
-	salt, _ := hex.DecodeString(u.Salt)
+func (u *User) ValidatePassword(password string, salt string) bool {
 	givenPasswordHash := u.buildHashedPassword(password, salt)
 
 	return givenPasswordHash == u.HashedPassword

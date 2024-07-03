@@ -11,7 +11,6 @@ var (
 	createUsersTableSQL = `CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
 		login TEXT NOT NULL,
-		salt TEXT NOT NULL,
 		hashed_password TEXT NOT NULL,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`
@@ -30,15 +29,14 @@ var (
 		UNIQUE (number, user_id)
 	)`
 	createTableBalancesSQL = `CREATE TABLE IF NOT EXISTS balances (
-		id SERIAL PRIMARY KEY,
+		user_id INTEGER PRIMARY KEY REFERENCES users(id),
 		current FLOAT NOT NULL,
-		user_id INTEGER NOT NULL REFERENCES users(id),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`
 	createTableWithdrawalsSQL = `CREATE TABLE IF NOT EXISTS withdrawals (
 		id SERIAL PRIMARY KEY,
 		sum FLOAT NOT NULL,
-		balance_id INTEGER NOT NULL REFERENCES balances(id),
+		balance_id INTEGER NOT NULL REFERENCES balances(user_id),
 		order_number VARCHAR NOT NULL,
 		proceeded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	)`

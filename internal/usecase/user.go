@@ -17,8 +17,8 @@ type UserUsecase struct {
 	factory *factory.UserFactory
 }
 
-func NewUserUsecase(db storage.Storage) *UserUsecase {
-	return &UserUsecase{db, factory.NewUserFactory()}
+func NewUserUsecase(db storage.Storage, userSalt string) *UserUsecase {
+	return &UserUsecase{db, factory.NewUserFactory(userSalt)}
 }
 
 func (uc *UserUsecase) CreateUserAndSession(ctx context.Context, req request.CreateUser) (*session.Session, error) {
@@ -35,7 +35,7 @@ func (uc *UserUsecase) CreateUserAndSession(ctx context.Context, req request.Cre
 	return uc.db.CreateSession(ctx, savedUser)
 }
 
-func (uc *UserUsecase) GetBalance(ctx context.Context, currUser *user.User) (*balance.Balance, []withdrawal.Withdrawal, error) {
+func (uc *UserUsecase) GetBalanceAndWithdrawals(ctx context.Context, currUser *user.User) (*balance.Balance, []withdrawal.Withdrawal, error) {
 	var withdrawals []withdrawal.Withdrawal
 	userBalance, err := uc.db.FindBalance(ctx, currUser)
 	if err != nil {

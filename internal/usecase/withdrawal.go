@@ -32,7 +32,7 @@ func (uc *WithdrawalUsecase) Create(ctx context.Context, wRequest request.Withdr
 		return nil, ErrNotEnoughBalance
 	}
 
-	return uc.db.CreateWithdraw(ctx, wRequest.Order, currentUser, wRequest.Sum)
+	return uc.db.CreateWithdrawal(ctx, wRequest.Order, currentUser, wRequest.Sum)
 }
 
 func (uc *WithdrawalUsecase) FindAll(ctx context.Context, currUser *user.User) ([]withdrawal.Withdrawal, error) {

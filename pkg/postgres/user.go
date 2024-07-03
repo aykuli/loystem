@@ -20,20 +20,22 @@ func (s *DBStorage) CreateUser(ctx context.Context, newUser *user.User) (*user.U
 	usersRepo := repository.NewUsersRepository(conn)
 	balancesRepo := repository.NewBalancesRepository(conn)
 
-	tx, err := conn.Begin(ctx)
+	// check if such user already exists
+	foundUser, err := usersRepo.FindByLogin(ctx, newUser.Login)
+	if foundUser != nil {
+		return nil, ErrUserAlreadyExists
+	}
+
+	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+		err = nil
+	}
 	if err != nil {
 		return nil, newDBError(err)
 	}
 
-	// find out if such user already exists
-	foundUser, err := usersRepo.FindByLogin(newUser.Login)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, rollbackOnErr(ctx, tx, err)
-	} else if err == nil && foundUser != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return nil, newDBError(rollbackErr)
-		}
-		return nil, ErrUserAlreadyExists
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil, newDBError(err)
 	}
 
 	savedUser, err := usersRepo.Create(ctx, tx, newUser)
@@ -44,10 +46,10 @@ func (s *DBStorage) CreateUser(ctx context.Context, newUser *user.User) (*user.U
 	if _, err = balancesRepo.Create(ctx, tx, savedUser); err != nil {
 		return nil, rollbackOnErr(ctx, tx, err)
 	}
-
 	if err = tx.Commit(ctx); err != nil {
 		return nil, newDBError(err)
 	}
+
 	return savedUser, nil
 }
 
@@ -59,23 +61,12 @@ func (s *DBStorage) FindUserByLogin(ctx context.Context, login string) (*user.Us
 	defer conn.Release()
 
 	usersRepo := repository.NewUsersRepository(conn)
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, newDBError(err)
-	}
-
-	foundUser, err := usersRepo.FindByLogin(login)
+	foundUser, err := usersRepo.FindByLogin(ctx, login)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return nil, newDBError(rollbackErr)
-		}
 		return nil, pgx.ErrNoRows
-	}
-	if err = tx.Commit(ctx); err != nil {
+	} else if err != nil {
 		return nil, newDBError(err)
 	}
-
 	return foundUser, nil
 }
 
@@ -101,7 +92,7 @@ func (s *DBStorage) FindUserByToken(ctx context.Context, token string) (*user.Us
 		return nil, rollbackOnErr(ctx, tx, errors.New("session not found"))
 	}
 
-	foundUser, err := usersRepo.FindByID(foundSession.UserID)
+	foundUser, err := usersRepo.FindByID(ctx, tx, foundSession.UserID)
 	if err != nil {
 		return nil, rollbackOnErr(ctx, tx, err)
 	} else if foundUser == nil {
