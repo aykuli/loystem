@@ -35,8 +35,8 @@ func (uc *OrderUsecase) Update(ctx context.Context, newOrder *order.Order) error
 	return err
 }
 
-func (uc *OrderUsecase) FindAllUnprocessed(ctx context.Context) ([]order.Order, error) {
-	return uc.db.FindAllUnprocessedOrders(ctx)
+func (uc *OrderUsecase) SelectUnprocessed(ctx context.Context, limit int) ([]order.Order, error) {
+	return uc.db.SelectUnprocessedOrders(ctx, limit)
 }
 
 func (uc *OrderUsecase) FindAllUserOrders(ctx context.Context, u *user.User) ([]order.Order, error) {

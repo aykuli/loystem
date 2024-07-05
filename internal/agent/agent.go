@@ -24,6 +24,7 @@ type Agent struct {
 	waitBeforePoll    time.Duration
 	requestMaxRetries int
 	url               string
+	pollLimit         int
 }
 
 func New(db storage.Storage, options config.Config, logger *zap.Logger) *Agent {
@@ -33,6 +34,7 @@ func New(db storage.Storage, options config.Config, logger *zap.Logger) *Agent {
 		waitBeforePoll:    options.PollInterval,
 		requestMaxRetries: options.RequestMaxRetries,
 		url:               options.AccrualSystemAddress,
+		pollLimit:         options.OrdersPollLimit,
 	}
 }
 
@@ -55,7 +57,7 @@ func (p *Agent) StartOrdersPolling(ctx context.Context, wg *sync.WaitGroup) {
 
 func (p *Agent) PollOrdersInfo(ctx context.Context) {
 	orderUsecase := usecase.NewOrderUsecase(p.storage)
-	orders, err := orderUsecase.FindAllUnprocessed(ctx)
+	orders, err := orderUsecase.SelectUnprocessed(ctx, p.pollLimit)
 	if err != nil {
 		p.logger.Warn("failed to find orders", "error", err)
 	}

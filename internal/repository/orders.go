@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	selectOrderByNumberSQL      = `SELECT id, number, user_id, status FROM orders WHERE number = @number`
-	insertOrderSQL              = `INSERT INTO orders (number, user_id, accrual, status) VALUES (@number, @user_id, @accrual, @status) RETURNING id`
-	updateOrderSQL              = `UPDATE orders SET (accrual, status) = (@accrual, @status) WHERE number = @number`
-	updateReturningOrderSQL     = `UPDATE orders SET (accrual, status) = (@accrual, @status) WHERE number = @number RETURNING id, number, user_id, status, accrual, uploaded_at`
-	selectOrdersByUserIDSQL     = `SELECT id, number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id = @user_id`
-	selectOrdersByStatusesIDSQL = `SELECT id, number, user_id, status, accrual, uploaded_at FROM orders WHERE status IN ('NEW','REGISTERED','PROCESSING')`
+	selectOrderByNumberSQL    = `SELECT id, number, user_id, status FROM orders WHERE number = @number`
+	insertOrderSQL            = `INSERT INTO orders (number, user_id, accrual, status) VALUES (@number, @user_id, @accrual, @status) RETURNING id`
+	updateOrderSQL            = `UPDATE orders SET (accrual, status) = (@accrual, @status) WHERE number = @number`
+	updateReturningOrderSQL   = `UPDATE orders SET (accrual, status) = (@accrual, @status) WHERE number = @number RETURNING id, number, user_id, status, accrual, uploaded_at`
+	selectOrdersByUserIDSQL   = `SELECT id, number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id = @user_id`
+	selectOrdersByStatusesSQL = `SELECT id, number, user_id, status, accrual, uploaded_at FROM orders WHERE status IN ('NEW','REGISTERED','PROCESSING') LIMIT @limit`
 )
 
 type OrdersRepository struct {
@@ -86,8 +86,8 @@ func (r *OrdersRepository) FindAllUserOrders(ctx context.Context, u *user.User) 
 	return orders, nil
 }
 
-func (r *OrdersRepository) FindAllUnprocessed(ctx context.Context) ([]order.Order, error) {
-	rows, err := r.conn.Query(ctx, selectOrdersByStatusesIDSQL)
+func (r *OrdersRepository) SelectUnprocessed(ctx context.Context, limit int) ([]order.Order, error) {
+	rows, err := r.conn.Query(ctx, selectOrdersByStatusesSQL, pgx.NamedArgs{"limit": limit})
 	if err != nil {
 		return nil, err
 	}

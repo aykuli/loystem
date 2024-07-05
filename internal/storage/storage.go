@@ -28,5 +28,5 @@ type Storage interface {
 	UpdateOrder(ctx context.Context, o *order.Order) error
 	UpdateOrderAndIncreaseBalance(ctx context.Context, o *order.Order) error
 	FindAllUserOrders(ctx context.Context, u *user.User) ([]order.Order, error)
-	FindAllUnprocessedOrders(ctx context.Context) ([]order.Order, error)
+	SelectUnprocessedOrders(ctx context.Context, limit int) ([]order.Order, error)
 }

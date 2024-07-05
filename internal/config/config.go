@@ -16,12 +16,14 @@ type Config struct {
 	RequestMaxRetries    int
 	PollInterval         time.Duration
 	UserSalt             string `env:"USER_SALT"`
+	OrdersPollLimit      int
 }
 
 const (
-	hostDefault     = "localhost"
-	portDefault     = "8080"
-	defaultUserSalt = "HavuDuUdoMrPron'ka"
+	hostDefault            = "localhost"
+	portDefault            = "8080"
+	defaultUserSalt        = "HavuDuUdoMrPron'ka"
+	defaultOrdersPollLimit = 100
 )
 
 var Options = Config{
@@ -31,6 +33,7 @@ var Options = Config{
 	RequestMaxRetries:    3,
 	PollInterval:         3 * time.Second,
 	UserSalt:             defaultUserSalt,
+	OrdersPollLimit:      defaultOrdersPollLimit,
 }
 
 func init() {

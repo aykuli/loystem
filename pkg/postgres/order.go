@@ -106,7 +106,7 @@ func (s *DBStorage) FindAllUserOrders(ctx context.Context, u *user.User) ([]orde
 	return orders, nil
 }
 
-func (s *DBStorage) FindAllUnprocessedOrders(ctx context.Context) ([]order.Order, error) {
+func (s *DBStorage) SelectUnprocessedOrders(ctx context.Context, limit int) ([]order.Order, error) {
 	conn, err := s.instance.Acquire(ctx)
 	if err != nil {
 		return nil, newDBError(err)
@@ -114,7 +114,7 @@ func (s *DBStorage) FindAllUnprocessedOrders(ctx context.Context) ([]order.Order
 	defer conn.Release()
 
 	ordersRepo := repository.NewOrdersRepository(conn)
-	orders, err := ordersRepo.FindAllUnprocessed(ctx)
+	orders, err := ordersRepo.SelectUnprocessed(ctx, limit)
 	if err != nil {
 		return nil, newDBError(err)
 	}
